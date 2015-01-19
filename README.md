@@ -18,3 +18,7 @@ Stage 1 Coverage (Current Stage):
 * input() statements
 * unary minus (-)
 * binary plus
+
+Credits
+=======
+This project is the combined work of [Nilesh Jagnik](https://github.com/nileshjagnik) and Alex Gendreau. 
