@@ -10,11 +10,15 @@ from ast2x86 import *
 
 if __name__ == '__main__':
     exampleAST = compiler.parseFile(sys.argv[1])
-    test1 = flatten(exampleAST)
+    map = {}
+    test1 = flatten(exampleAST,map)
     
+
+
     for t in test1:
         print t
-    
+    print map
+
     generateX86(test1,sys.argv[1].split('.')[0])
     # print
     # e1 = compiler.parse("x= 3 + input();y=4")
