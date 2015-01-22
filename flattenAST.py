@@ -5,22 +5,22 @@ tempLabel=0
 label="_tmp"
 stackLocal = -4
 
-def flatten(n,map):
+def flatten_ast(n,map):
     global tempLabel
     global stackLocal
     if isinstance(n, Module):
-        return flatten(n.node,map)
+        return flatten_ast(n.node,map)
     elif isinstance(n, Stmt):
         flat = []
         for x in n.nodes:
-            t1 = flatten(x,map)
+            t1 = flatten_ast(x,map)
             flat.extend(t1)
         return flat
     
     elif isinstance(n, Printnl):
         flat = []
         for x in n.nodes:
-            t1 = flatten(x,map)
+            t1 = flatten_ast(x,map)
             t = t1[-1]
             if isinstance(t,Const) or isinstance(t,Name):
                 flat.append(Printnl(t,None))
@@ -32,7 +32,7 @@ def flatten(n,map):
     elif isinstance(n, Assign):
         flat = []
         for x in n.nodes:
-            t1 = flatten(n.expr,map)
+            t1 = flatten_ast(n.expr,map)
             #print t1
             t = t1[-1]
             #print t
@@ -61,7 +61,7 @@ def flatten(n,map):
         return [n]
 #still need to handle this
     elif isinstance(n, Discard):
-        t = flatten(n.expr,map)
+        t = flatten_ast(n.expr,map)
         t1 = t[-1]
         if isinstance(t1,Assign):
             newNode = Assign(AssName(label+str(tempLabel),'OP_ASSIGN',Name(t1.nodes.name)))
@@ -80,8 +80,8 @@ def flatten(n,map):
         return [n]
 
     elif isinstance(n, Add):
-        l = flatten(n.left,map)
-        r = flatten(n.right,map)
+        l = flatten_ast(n.left,map)
+        r = flatten_ast(n.right,map)
         l1 = l[-1]
         r1 = r[-1]
         #print l1
@@ -116,7 +116,7 @@ def flatten(n,map):
         
     elif isinstance(n, UnarySub):
         #print "usub"
-        t1 = flatten(n.expr,map)
+        t1 = flatten_ast(n.expr,map)
         t = t1[-1]
         #print t
         if isinstance(t,Const) or isinstance(t,Name):
