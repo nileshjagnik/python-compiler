@@ -38,14 +38,19 @@ def flatten(n,map):
             #print t
             if isinstance(t,Assign):
                 flat.extend(t1)
-                n1 = AssName(x.name,'OP_ASSIGN')
-                newNode = Assign(n1,t.nodes.name)
-                flat.append(newNode)
-                map[x.name] = stackLocal
-                stackLocal = stackLocal - 4
+                sL = map[t.nodes.name]
+                del map[t.nodes.name]
+                t.nodes.name = x.name
+                #n1 = AssName(x.name,'OP_ASSIGN')
+                #newNode = Assign(n1,t.nodes.name)
+                #flat.append(newNode)
+                map[x.name] = sL
+                #stackLocal = stackLocal - 4
                 return flat
             else:
-                flat.append(x)
+                n2 = AssName(x.name,'OP_ASSIGN')
+                newNode = Assign(n2,t)
+                flat.append(newNode)
                 map[x.name] = stackLocal
                 stackLocal = stackLocal - 4
                 return flat
@@ -102,9 +107,12 @@ def flatten(n,map):
             tempLabel = tempLabel+1
             return l
         else:
-            #newNode = Assign(AssName(label+str(tempLabel),'OP_ASSIGN'),Add((l1,r1)))
-            #tempLabel = tempLabel+1
-            return [n]
+            newNode = Assign(AssName(label+str(tempLabel),'OP_ASSIGN'),Add((l1,r1)))
+            map[label+str(tempLabel)] = stackLocal
+            stackLocal = stackLocal - 4
+            tempLabel = tempLabel+1
+            #print n
+            return [newNode]
         
     elif isinstance(n, UnarySub):
         #print "usub"
@@ -139,7 +147,7 @@ def flatten(n,map):
             return ""
         
         elif isinstance(n, Printnl):
-            return "print "   +"\n"
+            return "print " + prettyPrint(n.nodes[0]) +"\n"
         
         elif isinstance(n, Assign):
             for x in n.nodes:
