@@ -2,7 +2,7 @@
 from compiler.ast import *
 
 tempLabel=0
-label="_tmp"
+label="$tmp"
 stackLocal = -4
 
 def flatten(n,map):
