@@ -49,7 +49,7 @@ def flatten_ast(n,map):
         last = n.nodes[0].name
         for x in n.nodes:
             newNode = Assign(AssName(x.name,'OP_ASSIGN'),result)
-            n = x.name
+            last = x.name
             pre.append(newNode)
             map[x.name] = stackLocal
             stackLocal = stackLocal - 4

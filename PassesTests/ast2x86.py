@@ -54,7 +54,7 @@ def generateX86(astlist,filename,varmap):
                     assemblyCode += "addl %eax, "+destination+"(%ebp)\n\n\t"
                 elif isinstance(tree.expr.right,Const):
                     value = str(tree.expr.right.value)
-                    assemblyCode += "add $"+value+", "+destination+"(%ebp)\n\n\t"
+                    assemblyCode += "addl $"+value+", "+destination+"(%ebp)\n\n\t"
 
         elif isinstance(tree,Printnl):
             if isinstance(tree.nodes,Name):
