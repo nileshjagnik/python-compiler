@@ -12,9 +12,6 @@ def generateX86(astlist,filename,varmap):
 			if isinstance(tree.expr,CallFunc):
 				destination = str(varmap[tree.nodes.name])
 				assemblyCode += "call input\n\tmovl %eax, "+destination+"(%ebp)\n\n\t"
-            elif isinstance(tree.expr,Name):
-                source = str(varmap[Name.name])
-                destination = k
 			elif isinstance(tree.expr,UnarySub):
 				if isinstance(tree.expr.expr,Name):
 					source = str(varmap[tree.expr.expr.name])
@@ -23,7 +20,7 @@ def generateX86(astlist,filename,varmap):
 					assemblyCode += "movl %eax, "+destination+"(%ebp)\n\t"
 					assemblyCode += "negl "+destination+"(%ebp)\n\n\t"
 				elif isinstance(tree.expr.expr,Const):
-					value = str(tree.expr.expr.value)
+					value = tree.expr.expr.value
 					destination = str(varmap[tree.nodes.name])
 					assemblyCode += "movl $"+value+", "+destination+"(%ebp)\n\t"
 					assemblyCode += "negl "+destination+"(%ebp)\n\n\t"

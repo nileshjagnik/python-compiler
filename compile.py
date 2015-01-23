@@ -10,14 +10,21 @@ from ast2x86 import *
 
 if __name__ == '__main__':
     exampleAST = compiler.parseFile(sys.argv[1])
+    #print exampleAST
     varmap = {}
-    test1 = flatten_ast(exampleAST,varmap)
+    (test1,empty) = flatten_ast(exampleAST,varmap)
     
-
-
-    for t in test1:
-        print t
-    print varmap
+    debug = 1
+    
+    #exampleAST = compiler.parse("a = 5 + input() +-6 + input(); print a")
+    #varmap = {}
+    #(test1,empty) = flatten_ast(exampleAST,varmap)
+    
+    if(debug):
+        print len(test1)
+        for t in test1:
+            print t
+        print varmap
 
     generateX86(test1,sys.argv[1].split('.')[0],varmap)
     # print

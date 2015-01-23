@@ -10,133 +10,105 @@ def flatten_ast(n,map):
     global stackLocal
     if isinstance(n, Module):
         return flatten_ast(n.node,map)
+    
     elif isinstance(n, Stmt):
         flat = []
+        #print "number of statements"
+        #print len(n.nodes)
         for x in n.nodes:
-            t1 = flatten_ast(x,map)
-            flat.extend(t1)
-        return flat
+            #print "statement"
+            #print x
+            (pre,result) = flatten_ast(x,map)
+            #print "pre"
+            #print pre
+            
+            flat.extend(pre)
+            #print "FLAT"
+            #for f in flat:
+            #    print f
+            #print
+        return (flat,Name("DONE"))
     
     elif isinstance(n, Printnl):
         flat = []
         for x in n.nodes:
-            t1 = flatten_ast(x,map)
-            t = t1[-1]
-            if isinstance(t,Const) or isinstance(t,Name):
-                flat.append(Printnl(t,None))
-            else:
-                flat.extend(t1)
-                flat.append(Printnl(Name(t.nodes.name),None))
-        return flat
-    
+            (pre,result) = flatten_ast(x,map)
+            #print result
+            newNode = Printnl(result,None)
+            flat.extend(pre)
+            flat.append(newNode)
+        return (flat,Name("Done Printing"))
+            
+
     elif isinstance(n, Assign):
-        flat = []
+        (pre,result) = flatten_ast(n.expr,map)
+        #print "pre"
+        #print pre
+        #print "result"
+        #print result
+        last = n.nodes[0].name
         for x in n.nodes:
-            t1 = flatten_ast(n.expr,map)
-            #print t1
-            t = t1[-1]
-            #print t
-            if isinstance(t,Assign):
-                flat.extend(t1)
-                sL = map[t.nodes.name]
-                del map[t.nodes.name]
-                t.nodes.name = x.name
-                #n1 = AssName(x.name,'OP_ASSIGN')
-                #newNode = Assign(n1,t.nodes.name)
-                #flat.append(newNode)
-                map[x.name] = sL
-                #stackLocal = stackLocal - 4
-                return flat
-            else:
-                n2 = AssName(x.name,'OP_ASSIGN')
-                newNode = Assign(n2,t)
-                flat.append(newNode)
-                map[x.name] = stackLocal
-                stackLocal = stackLocal - 4
-                return flat
-
-
+            newNode = Assign(AssName(x.name,'OP_ASSIGN'),result)
+            n = x.name
+            pre.append(newNode)
+            map[x.name] = stackLocal
+            stackLocal = stackLocal - 4
+        return (pre,last)
 
     elif isinstance(n, AssName):
-        return [n]
+        return ([],n)
 #still need to handle this
     elif isinstance(n, Discard):
-        t = flatten_ast(n.expr,map)
-        t1 = t[-1]
-        if isinstance(t1,Assign):
-            newNode = Assign(AssName(label+str(tempLabel),'OP_ASSIGN',Name(t1.nodes.name)))
-            tempLabel = tempLabel + 1
-            return t.append(newNode)
-        else:
-            newNode = Assign(AssName(label+str(tempLabel),'OP_ASSIGN',t1))
-            tempLabel = tempLabel + 1
-            return [newNode]
+        (pre,result) = flatten_ast(n.expr,map)
+        newName = label+str(tempLabel)
+        newNode = Assign(AssName(newName,'OP_ASSIGN',result))
+        tempLabel = tempLabel+1
+        pre.append(newNode)
+        map[newName] = stackLocal
+        stackLocal = stackLocal - 4
+        return (pre,Name(newName))
 
 
     elif isinstance(n, Const):
-        return [n]
+        return ([],n)
 
     elif isinstance(n, Name):
-        return [n]
+        return ([],n)
 
     elif isinstance(n, Add):
-        l = flatten_ast(n.left,map)
-        r = flatten_ast(n.right,map)
-        l1 = l[-1]
-        r1 = r[-1]
-        #print l1
-        #print r1
-        if isinstance(l1,Assign) and isinstance(r1,Assign):
-            l.extend(r)
-            l.append(Assign(AssName(label+str(tempLabel),'OP_ASSIGN'),Add(Name(l1.nodes.name),Name(r1.nodes.name))))
-            map[label+str(tempLabel)] = stackLocal
-            stackLocal = stackLocal - 4
-            tempLabel = tempLabel+1
-            return l
+        (preLeft,rLeft) = flatten_ast(n.left,map)
+        (preRight,rRight) = flatten_ast(n.right,map)
+        preLeft.extend(preRight)
+        newName = label+str(tempLabel)
+        newNode = Assign(AssName(newName,'OP_ASSIGN'),Add((rLeft,rRight)))
+        map[newName] = stackLocal
+        stackLocal = stackLocal - 4
+        tempLabel = tempLabel+1
+        preLeft.append(newNode)
+        #print n
+        return (preLeft,Name(newName))
 
-        elif isinstance(r1,Assign):
-            r.append(Assign(AssName(label+str(tempLabel),'OP_ASSIGN'),Add((l1,Name(r1.nodes.name)))))
-            map[label+str(tempLabel)] = stackLocal
-            stackLocal = stackLocal - 4
-            tempLabel = tempLabel+1
-            return r
-        elif isinstance(l1,Assign):
-            l.append(Assign(AssName(label+str(tempLabel),'OP_ASSIGN'),Add((Name(l1.nodes.name),r1))))
-            map[label+str(tempLabel)] = stackLocal
-            stackLocal = stackLocal - 4
-            tempLabel = tempLabel+1
-            return l
-        else:
-            newNode = Assign(AssName(label+str(tempLabel),'OP_ASSIGN'),Add((l1,r1)))
-            map[label+str(tempLabel)] = stackLocal
-            stackLocal = stackLocal - 4
-            tempLabel = tempLabel+1
-            #print n
-            return [newNode]
-        
     elif isinstance(n, UnarySub):
-        #print "usub"
-        t1 = flatten_ast(n.expr,map)
-        t = t1[-1]
-        #print t
-        if isinstance(t,Const) or isinstance(t,Name):
-            return [n]
-        else:
-            t1.append(Assign(AssName(label+str(tempLabel),'OP_ASSIGN'),UnarySub(Name(t.nodes.name))))
-            map[label+str(tempLabel)] = stackLocal
-            stackLocal = stackLocal - 4
-            tempLabel = tempLabel +1
-            return t1
+        (pre,result) = flatten_ast(n.expr,map)
+        newName = label+str(tempLabel)
+        newNode = Assign(AssName(newName,'OP_ASSIGN'),UnarySub(result))
+        map[newName] = stackLocal
+        stackLocal = stackLocal - 4
+        tempLabel = tempLabel +1
+        pre.append(newNode)
+        return (pre,Name(newName))
+
 
     #Very specific for this assignment
     elif isinstance(n, CallFunc):
-        store = Assign(AssName(label+str(tempLabel),'OP_ASSIGN'),n)
-        map[label+str(tempLabel)] = stackLocal
+        newName = label+str(tempLabel)
+        newNode = Assign(AssName(newName,'OP_ASSIGN'),n)
+        map[newName] = stackLocal
         stackLocal = stackLocal - 4
         tempLabel = tempLabel+1
-        return [store]
+        return ([newNode],Name(newName))
     else:
-        print "error"
+        x = "nothing"
 
 
     def prettyPrint(n):
@@ -173,7 +145,7 @@ def flatten_ast(n,map):
         elif isinstance(n, CallFunc):
             return "input() "
         else:
-            print "error"
+            x =  "error"
 
 
 
