@@ -26,7 +26,12 @@ if __name__ == '__main__':
             print t
         print varmap
 
-    generateX86(test1,sys.argv[1].split('.')[0],varmap)
+    filename = ""
+    prev = sys.argv[1].split('.')[0]
+    for k in sys.argv[1].split('.')[1:]:
+    	filename += prev
+    	k = prev
+    generateX86(test1,filename,varmap)
     # print
     # e1 = compiler.parse("x= 3 + input();y=4")
     # test2 = flatten(e1)
