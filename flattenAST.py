@@ -49,24 +49,25 @@ def flatten_ast(n,map):
         last = n.nodes[0].name
         for x in n.nodes:
             newNode = Assign(AssName(x.name,'OP_ASSIGN'),result)
-            n = x.name
+            last = x.name
             pre.append(newNode)
-            map[x.name] = stackLocal
-            stackLocal = stackLocal - 4
-        return (pre,last)
+            if last not in map:
+                map[x.name] = stackLocal
+                stackLocal = stackLocal - 4
+        return (pre,Name(last))
 
     elif isinstance(n, AssName):
         return ([],n)
 #still need to handle this
     elif isinstance(n, Discard):
         (pre,result) = flatten_ast(n.expr,map)
-        newName = label+str(tempLabel)
-        newNode = Assign(AssName(newName,'OP_ASSIGN',result))
-        tempLabel = tempLabel+1
-        pre.append(newNode)
-        map[newName] = stackLocal
-        stackLocal = stackLocal - 4
-        return (pre,Name(newName))
+        #newName = label+str(tempLabel)
+        #newNode = Assign(AssName(newName,'OP_ASSIGN'),result)
+        #pre.append(newNode)
+        #map[newName] = stackLocal
+        #stackLocal = stackLocal - 4
+        #tempLabel = tempLabel+1
+        return (pre,Name("Discard"))
 
 
     elif isinstance(n, Const):

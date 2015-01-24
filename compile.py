@@ -14,7 +14,7 @@ if __name__ == '__main__':
     varmap = {}
     (test1,empty) = flatten_ast(exampleAST,varmap)
     
-    debug = 1
+    debug = 0
     
     #exampleAST = compiler.parse("a = 5 + input() +-6 + input(); print a")
     #varmap = {}
@@ -26,7 +26,12 @@ if __name__ == '__main__':
             print t
         print varmap
 
-    generateX86(test1,sys.argv[1].split('.')[0],varmap)
+    filename = ""
+    prev = sys.argv[1].split('.')[0]
+    for k in sys.argv[1].split('.')[1:]:
+    	filename += prev
+    	prev = "."+k
+    generateX86(test1,filename,varmap)
     # print
     # e1 = compiler.parse("x= 3 + input();y=4")
     # test2 = flatten(e1)
