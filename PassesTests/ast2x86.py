@@ -16,7 +16,7 @@ def generateX86(astlist,filename,varmap):
             elif isinstance(tree.expr,Const):
                 destination = str(varmap[tree.nodes.name])
                 value = str(tree.expr.value)
-                assemblyCode += "movl $"+value+", "+destination+"(%ebp)\n\t"
+                assemblyCode += "movl $"+value+", "+destination+"(%ebp)\n\n\t"
             elif isinstance(tree.expr,Name):
                 destination = str(varmap[tree.nodes.name])
                 source = str(varmap[tree.expr.name])
