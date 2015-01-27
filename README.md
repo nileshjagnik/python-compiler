@@ -13,11 +13,15 @@ The directory [basic_programs](basic_programs) contains examples on how to use t
 
 Stages
 ======
-Stage 1 Coverage (Current Stage):
+Stage 1 Coverage:
 * print statements
 * input() statements
+* print statements
 * unary minus (-)
 * binary plus
+
+Stage 2 (Current Stage):
+* We make a parser in python that works for the language subset from stage 1.
 
 Credits
 =======
