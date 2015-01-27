@@ -34,7 +34,7 @@ def flatten_ast(n,map):
         for x in n.nodes:
             (pre,result) = flatten_ast(x,map)
             #print result
-            newNode = Printnl(result,None)
+            newNode = Printnl([result],None)
             flat.extend(pre)
             flat.append(newNode)
         return (flat,Name("Done Printing"))
@@ -48,7 +48,7 @@ def flatten_ast(n,map):
         #print result
         last = n.nodes[0].name
         for x in n.nodes:
-            newNode = Assign(AssName(x.name,'OP_ASSIGN'),result)
+            newNode = Assign([AssName(x.name,'OP_ASSIGN')],result)
             last = x.name
             pre.append(newNode)
             if last not in map:
@@ -61,12 +61,6 @@ def flatten_ast(n,map):
 #still need to handle this
     elif isinstance(n, Discard):
         (pre,result) = flatten_ast(n.expr,map)
-        #newName = label+str(tempLabel)
-        #newNode = Assign(AssName(newName,'OP_ASSIGN'),result)
-        #pre.append(newNode)
-        #map[newName] = stackLocal
-        #stackLocal = stackLocal - 4
-        #tempLabel = tempLabel+1
         return (pre,Name("Discard"))
 
 
@@ -81,7 +75,7 @@ def flatten_ast(n,map):
         (preRight,rRight) = flatten_ast(n.right,map)
         preLeft.extend(preRight)
         newName = label+str(tempLabel)
-        newNode = Assign(AssName(newName,'OP_ASSIGN'),Add((rLeft,rRight)))
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],Add((rLeft,rRight)))
         map[newName] = stackLocal
         stackLocal = stackLocal - 4
         tempLabel = tempLabel+1
@@ -92,7 +86,7 @@ def flatten_ast(n,map):
     elif isinstance(n, UnarySub):
         (pre,result) = flatten_ast(n.expr,map)
         newName = label+str(tempLabel)
-        newNode = Assign(AssName(newName,'OP_ASSIGN'),UnarySub(result))
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],UnarySub(result))
         map[newName] = stackLocal
         stackLocal = stackLocal - 4
         tempLabel = tempLabel +1
@@ -103,7 +97,7 @@ def flatten_ast(n,map):
     #Very specific for this assignment
     elif isinstance(n, CallFunc):
         newName = label+str(tempLabel)
-        newNode = Assign(AssName(newName,'OP_ASSIGN'),n)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],n)
         map[newName] = stackLocal
         stackLocal = stackLocal - 4
         tempLabel = tempLabel+1
