@@ -14,7 +14,7 @@ if __name__ == '__main__':
     varmap = {}
     (test1,empty) = flatten_ast(exampleAST,varmap)
     
-    debug = 0
+    debug = 1
     
     #exampleAST = compiler.parse("a = 5 + input() +-6 + input(); print a")
     #varmap = {}

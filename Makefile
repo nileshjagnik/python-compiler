@@ -1,7 +1,7 @@
 all: build
 
 build:
-	python compile.py "./tests/pandaPANDAlargeTest.py"
+	python compile.py "./tests/gradertest.py"
 
 clean:
 	rm *.pyc
