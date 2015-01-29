@@ -1,14 +1,14 @@
 from compiler.ast import Module,Stmt,Printnl, Assign, AssName, Const, Name, Add, UnarySub, CallFunc, Discard
 
 reserved = { #our small set of keywords for P0
-    'print' : 'PRINT',
-    'input' : 'INPUT'
+    'print' : 'PRINT'
+#'input' : 'INPUT' #this probably shouldn't be a reserved word, only if it is followed by parens
 }
 
 tokens = [
           'NAME','INT',
           'PLUS','MINUS','EQUALS',
-          'LPAREN','RPAREN',
+          'LPAREN','RPAREN','INPUT'
           ] + list(reserved.values())
 
 # Tokens
@@ -20,14 +20,18 @@ t_EQUALS  = r'='
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
 
-def t_COMMENT(t): #am I handling comments correctly?
-    r'\#.*\n'
-    t.lexer.lineno += t.value.count("\n")
+def t_INPUT(t):
+    r'input'
+    return t
 
 def t_NAME(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
     t.type = reserved.get(t.value,'NAME')    # Check for reserved words
+    #print "name: " + str(t.lexer.lineno)
+    #print t
     return t
+
+
 
 def t_INT(t):
     r'\d+'
@@ -37,6 +41,9 @@ def t_INT(t):
         print("Integer value too large %d", t.value)
         t.value = 0
     return t
+
+def t_COMMENT(t): #am I handling comments correctly?
+    r'\#.*'
 
 # Ignored characters
 t_ignore = " \t"
@@ -112,7 +119,6 @@ def p_name_expression(t):
 
 def p_input_expression(t):
     'expression : INPUT LPAREN RPAREN'
-    print t[1]
     t[0] = CallFunc(Name(t[1]),[])
 
 def p_expression_group(t):
@@ -123,7 +129,7 @@ def p_expression_group(t):
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
-    print t
+
 
 import ply.yacc as yacc
 yacc.yacc()
