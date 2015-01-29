@@ -1,7 +1,10 @@
-import compiler
+#import compiler
+from parse import *
 import sys
 from flattenAST import *
 from ast2x86 import *
+
+
 
 # python compile.py example1.py
 # $gcc -m32 *.c example1.s -o test.exe -lm
@@ -9,7 +12,10 @@ from ast2x86 import *
 # cat test.in | -l test.exe
 
 if __name__ == '__main__':
-    exampleAST = compiler.parseFile(sys.argv[1])
+    #exampleAST = compiler.parseFile(sys.argv[1])
+    f = open(sys.argv[1])
+    program = f.read()
+    exampleAST = yacc.parse(program)
     #print exampleAST
     varmap = {}
     (test1,empty) = flatten_ast(exampleAST,varmap)
@@ -21,6 +27,15 @@ if __name__ == '__main__':
     #(test1,empty) = flatten_ast(exampleAST,varmap)
     
     if(debug):
+        # Give the lexer some input
+        lex.input(program)
+
+        # Tokenize
+        while True:
+            tok = lex.token()
+            if not tok: break      # No more input
+            print tok
+
         print len(test1)
         for t in test1:
             print t
