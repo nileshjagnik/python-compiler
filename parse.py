@@ -20,7 +20,7 @@ t_EQUALS  = r'='
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
 
-def t_COMMENT(t):
+def t_COMMENT(t): #am I handling comments correctly?
     r'\#.*\n'
     t.lexer.lineno += t.value.count("\n")
 
