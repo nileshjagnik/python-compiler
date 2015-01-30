@@ -20,8 +20,13 @@ t_EQUALS  = r'='
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
 
+def t_BACKSLASH(t):
+    r'\\'
+
+
 def t_INPUT(t):
-    r'input'
+    r'input[ \t]*\([ \t\v\r\n]*\)'
+    t.value = 'input'
     return t
 
 def t_NAME(t):
@@ -30,8 +35,6 @@ def t_NAME(t):
     #print "name: " + str(t.lexer.lineno)
     #print t
     return t
-
-
 
 def t_INT(t):
     r'\d+'
@@ -46,7 +49,7 @@ def t_COMMENT(t): #am I handling comments correctly?
     r'\#.*'
 
 # Ignored characters
-t_ignore = " \t"
+t_ignore = " \t\v\r"
 
 def t_newline(t):
     r'\n+'
@@ -72,8 +75,12 @@ precedence = (
 #Program and Module
 
 def p_program(t):
-    'program : module'
-    t[0] = Module(None, t[1])
+    '''program : 
+        | module'''
+    if(len(t)==1):
+        t[0] = Module(None,Stmt([]))
+    else:
+        t[0] = Module(None, t[1])
 
 def p_module(t):
     '''module : statement 
@@ -91,7 +98,8 @@ def p_print_statement(t):
     t[0] = Printnl([t[2]], None)
 
 def p_statement_assign(t):
-    'statement : NAME EQUALS expression'
+    '''statement : NAME EQUALS expression 
+        | INPUT EQUALS expression '''
     t[0] = Assign([AssName(t[1],'OP_ASSIGN')],t[3])
 
 def p_statement_expr(t):
@@ -118,14 +126,16 @@ def p_name_expression(t):
     t[0] = Name(t[1])
 
 def p_input_expression(t):
-    'expression : INPUT LPAREN RPAREN'
+    'expression : INPUT'
     t[0] = CallFunc(Name(t[1]),[])
+
+#def p_name_expression(t):
+#   'expression : INPUT'
+#   t[0] = Name(t[1])
 
 def p_expression_group(t):
     'expression : LPAREN expression RPAREN'
     t[0] = t[2]
-
-
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)

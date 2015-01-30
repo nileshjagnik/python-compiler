@@ -15,6 +15,12 @@ if __name__ == '__main__':
     #exampleAST = compiler.parseFile(sys.argv[1])
     f = open(sys.argv[1])
     program = f.read()
+    #print program
+        #program = '''
+        #this is a comment
+        #x=3 #this is a another comment
+        #y=input()
+        #print x'''
     exampleAST = yacc.parse(program)
     #print exampleAST
     varmap = {}
