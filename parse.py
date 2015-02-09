@@ -67,7 +67,7 @@ lex.lex()
 
 precedence = (
     ('nonassoc','PRINT'),
-    ('left','PLUS'),
+    ('left','PLUS','MINUS'),
     ('right','UMINUS'),
     )
 
@@ -110,7 +110,7 @@ def p_statement_expr(t):
 #EXPRESSIONS
 
 def p_plus_expression(t):
-    'expression : expression PLUS expression'
+    'expression : expression MINUS INT'
     t[0] = Add((t[1],t[3]))
 
 def p_int_expression(t):
