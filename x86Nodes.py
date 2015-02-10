@@ -3,12 +3,12 @@
 
 
 
-class Node:
-    """Abstract base class for nodes"""
+class Instruction:
+    """Abstract base class for instruction"""
     def getInputs(self):
         pass #implemented by subclasses
 
-class AddL(Node):
+class AddL(Instruction):
     def __init__(self,leftright):
         self.instruction = "addl"
         self.left = leftright[0]
@@ -20,7 +20,7 @@ class AddL(Node):
     def __repr__(self):
         return "%s %s, %s" % (repr(self.instruction),repr(self.left), repr(self.right))
 
-class MovL(Node):
+class MovL(Instruction):
     def __init__(self,leftright):
         self.instruction = "movl"
         self.left = leftright[0]
@@ -32,7 +32,7 @@ class MovL(Node):
     def __repr__(self):
         return "%s %s,%s" % (repr(self.instruction),repr(self.left), repr(self.right))
 
-class NegL(Node):
+class NegL(Instruction):
     def __init__(self,value):
         self.instruction = "negl"
         self.value = value
@@ -44,7 +44,7 @@ class NegL(Node):
         return "%s %s" % (repr(self.instruction),repr(self.value))
 
 
-class Call(Node):
+class Call(Instruction):
     def __init__(self, funcName):
         self.instruction = "call"
         self.funcName = funcName
@@ -52,22 +52,46 @@ class Call(Node):
     def getInputs(self):
         return self.funcName
 
-class Con(Node):
+    def __repr__(self):
+            return "%s %s" % (repr(self.instruction),repr(self.funcName))
+
+class Push(Instruction):
+    def __init__(self,argument):
+        self.instruction = "pushl"
+        self.argument = argument
+                          
+    def getInputs(self):
+        return self.argument
+                          
+    def __repr__(self):
+        return "%s %s" % (repr(self.instruction),repr(self.argument))
+
+
+
+
+class Operand:
+    """Abstract base class for x86 operands"""
+
+
+class Con(Operand):
     def __init__(self,value):
         self.value = value
-
-    def getInputs(self):
-        return self.value
 
     def __repr__(self):
         return "$%s" % repr(self.value)
 
-class Var(Node):
+    def __eq__(self,v):
+        return self.value == v.value
+    
+    def __ne__(self,v):
+        return self.value != v.value
+    
+    def __hash__(self):
+        return hash(self.value)
+
+class Var(Operand):
     def __init__(self,name):
         self.name = name
-    
-    def getInputs(self):
-        return self.name
     
     def __repr__(self):
         return "%s" % repr(self.name)
@@ -80,6 +104,39 @@ class Var(Node):
 
     def __hash__(self):
         return hash(self.name)
+
+class Register(Operand):
+    def __init__(self,register):
+        self.register = register
+
+    def __repr__(self):
+        return "%s" % repr(self.register)
+
+    def __eq__(self,v):
+        return self.register == v.register
+    
+    def __ne__(self,v):
+        return self.register != v.register
+    
+    def __hash__(self):
+        return hash(self.register)
+
+class Address(Operand):
+    def __init__(self,stackLocal):
+        self.local = stackLocal
+        self.address = str(local)+"%ebp"
+
+    def __repr__(self):
+        return "%s" % repr(self.address)
+    
+    def __eq__(self,v):
+        return self.address == v.address
+    
+    def __ne__(self,v):
+        return self.address != v.address
+    
+    def __hash__(self):
+        return hash(self.address)
 
 
 

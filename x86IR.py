@@ -9,9 +9,6 @@ def generateInstructions(astList):
         if isinstance(tree,Assign):
             assignmentVariable = Var(tree.nodes[0].name)
             if isinstance(tree.expr,Add):
-                #print "here"
-                tmp1 = ""
-                tmp2 = ""
                 if isinstance(tree.expr.left,Name) and isinstance(tree.expr.right,Name):
                     tmp1 = Var(tree.expr.left.name)
                     tmp2 = Var(tree.expr.right.name)
@@ -53,9 +50,20 @@ def generateInstructions(astList):
                 moveNode = MovL((Var(tree.expr.name),assignmentVariable))
                 IR.extend([moveNode])
                     
-            #elif isinstance(tree.expr,CallFunc):
-                    #funcNode = Call("input")
-                    #moveNode = MovL(("%eax",assignmentVariable))
+            elif isinstance(tree.expr,CallFunc):
+                    funcNode = Call("input")
+                    moveNode = MovL((Register("%eax"),assignmentVariable))
+                        
+        elif isinstance(tree,Printnl):
+            if isinstance(tree.nodes[0],Name):
+                pushNode = Push(Var(tree.nodes[0].name))
+            elif isinstance(tree.nodes[0],Const):
+                pushNode = Push(Con(tree.nodes[0].value))
+
+            printNode = Call("print_int_nl")
+            popStack = AddL((Con(4),Register("%esp")))
+            IR.extend([pushNode,printNode,popStack])
+    
 
     return IR
 
@@ -69,7 +77,7 @@ def generateInstructions(astList):
 
 
 
-            
+
 
 
 
