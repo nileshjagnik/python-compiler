@@ -67,6 +67,9 @@ if __name__ == '__main__':
         print "interference graph"
         for k in iG.keys():
             print str(k) +": " + str(iG[k])
+
+        coloring = graphColor(iG)
+        print coloring
 #print
 
 #print iG
