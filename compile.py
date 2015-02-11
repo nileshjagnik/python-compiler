@@ -5,6 +5,7 @@ from flattenAST import *
 from ast2x86 import *
 from x86IR import *
 from registerAllocation import *
+from colorSpill import *
 
 
 
@@ -68,7 +69,8 @@ if __name__ == '__main__':
         for k in iG.keys():
             print str(k) +": " + str(iG[k])
 
-        coloring = graphColor(iG)
+        print "\ncoloring"
+        coloring = colorSpill(iG,IR,liveness)
         print coloring
 #print
 
