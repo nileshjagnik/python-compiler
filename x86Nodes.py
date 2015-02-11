@@ -81,10 +81,16 @@ class Con(Operand):
         return "$%s" % repr(self.value)
 
     def __eq__(self,v):
-        return self.value == v.value
+        if isinstance(v,Con):
+            return self.value == v.value
+        else:
+            return False
     
     def __ne__(self,v):
-        return self.value != v.value
+        if isinstance(v,Con):
+            return self.value != v.value
+        else:
+            return True
     
     def __hash__(self):
         return hash(self.value)
@@ -97,10 +103,16 @@ class Var(Operand):
         return "%s" % repr(self.name)
 
     def __eq__(self,v):
-        return self.name == v.name
-
+        if isinstance(v,Var):
+            return self.name == v.name
+        else:
+            return False
+    
     def __ne__(self,v):
-        return self.name != v.name
+        if isinstance(v,Var):
+            return self.name != v.name
+        else:
+            return True
 
     def __hash__(self):
         return hash(self.name)
@@ -113,10 +125,16 @@ class Register(Operand):
         return "%s" % repr(self.register)
 
     def __eq__(self,v):
-        return self.register == v.register
+        if isinstance(v,Register):
+            return self.register == v.register
+        else:
+            return False
     
     def __ne__(self,v):
-        return self.register != v.register
+        if isinstance(v,Register):
+            return self.register != v.register
+        else:
+            return True
     
     def __hash__(self):
         return hash(self.register)
@@ -130,10 +148,16 @@ class Address(Operand):
         return "%s" % repr(self.address)
     
     def __eq__(self,v):
-        return self.address == v.address
+        if isinstance(v, Address):
+            return self.address == v.address
+        else:
+            return False
     
     def __ne__(self,v):
-        return self.address != v.address
+        if isinstance(v, Address):
+            return self.address != v.address
+        else:
+            return True
     
     def __hash__(self):
         return hash(self.address)

@@ -19,31 +19,31 @@ def colorSpill(interferenceGraph,instructionList,livenessSet):
     coloring= colorGraph(interferenceGraph)
     foundIllegal = 0
     # NOTE - condition for while needs to change. But currently there are no registers in Interference graph, so I need to add the length of registers 
-    while (len(coloring) < len(vertices) + len(registers)) and (foundIllegal==0):
-    	#spill code here
-    	for vertex in vertices:
-    		if vertex not in coloring.keys():
-    			coloring[vertex] = counter
-    			counter = counter- 4
-		#check for illegal instructions
-		newinstList= []
-		for index,instruction in enumerate(instructionList):
-			if isinstance(instruction,AddL):
-				if (isinstance(instruction.left,Var)) and (isinstance(instruction.right,Var)) and (coloring[instruction.left] < 0) and (coloring[instruction.right] < 0):
-					newinstList.append(MovL((instruction.left,Var('$regtemp'))))
-					newinstList.append(AddL((Var('$regtemp'),instruction.right)))
-					foundIllegal = 1 
-				else:
-					newinstList.append(instruction)
-			elif isinstance(instruction,MovL):
-				if (isinstance(instruction.left,Var)) and (isinstance(instruction.right,Var)) and (coloring[instruction.left] < 0) and (coloring[instruction.right] < 0):
-					newinstList.append(MovL((instruction.left,Var('$regtemp'))))
-					newinstList.append(MovL((Var('$regtemp'),instruction.right)))
-					foundIllegal = 1 
-				else:
-					newinstList.append(instruction)
-			else:
-				newinstList.append(instruction)
+  #   while (len(coloring) < len(vertices) + len(registers)) and (foundIllegal==0):
+  #   	#spill code here
+  #   	for vertex in vertices:
+  #   		if vertex not in coloring.keys():
+  #   			coloring[vertex] = counter
+  #   			counter = counter- 4
+		# #check for illegal instructions
+		# newinstList= []
+		# for index,instruction in enumerate(instructionList):
+		# 	if isinstance(instruction,AddL):
+		# 		if (isinstance(instruction.left,Var)) and (isinstance(instruction.right,Var)) and (coloring[instruction.left] < 0) and (coloring[instruction.right] < 0):
+		# 			newinstList.append(MovL((instruction.left,Var('$regtemp'))))
+		# 			newinstList.append(AddL((Var('$regtemp'),instruction.right)))
+		# 			foundIllegal = 1 
+		# 		else:
+		# 			newinstList.append(instruction)
+		# 	elif isinstance(instruction,MovL):
+		# 		if (isinstance(instruction.left,Var)) and (isinstance(instruction.right,Var)) and (coloring[instruction.left] < 0) and (coloring[instruction.right] < 0):
+		# 			newinstList.append(MovL((instruction.left,Var('$regtemp'))))
+		# 			newinstList.append(MovL((Var('$regtemp'),instruction.right)))
+		# 			foundIllegal = 1 
+		# 		else:
+		# 			newinstList.append(instruction)
+		# 	else:
+		# 		newinstList.append(instruction)
     return coloring
 
 
@@ -56,7 +56,10 @@ def colorGraph(interferenceGraph):
 		coloring[reg]=i
 		i=i+1
 	vertices = interferenceGraph.keys()
-
+	for reg in registers:
+		if reg in vertices:
+			vertices.remove(reg)
+	
 	#initialize saturation as a dictionary which stores initial saturation
 	isat = {}
 
