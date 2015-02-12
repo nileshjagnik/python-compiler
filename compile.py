@@ -54,7 +54,7 @@ if __name__ == '__main__':
     
     if(registerTest):
         print
-        IR = generateInstructions(test1)
+        IR,variables = generateInstructions(test1)
         print "IR"
         for x in IR:
             print x
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         for x in liveness:
             print x
         print
-        iG = interferenceGraph(IR,liveness)
+        iG = interferenceGraph(IR,liveness,variables)
         print "interference graph"
         for k in iG.keys():
             print str(k) +": " + str(iG[k])
