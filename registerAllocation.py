@@ -29,11 +29,11 @@ def livenessAnalysis(instructionList):
 
     return live
 
-def interferenceGraph(instructionList,livenessSet):
+def interferenceGraph(instructionList,livenessSet,variables):
     #totalVariables = 10 #hack for working example
     #totalVariables = [Var('w'),Var('x'),Var('y'),Var('z'),Var('$tmp0'),Var('$tmp1'),Var('$tmp2')]
-    #interference = {k: set([]) for k in totalVariables}
-    interference = {}
+    interference = {k: set([]) for k in variables}
+    #interference = {}
     programPoint = 1
     #add registers to interference graph, ignore ebp and esp (stack pointers)
     #interference[Register("%eax")] = set([])
