@@ -4,6 +4,7 @@ from x86Nodes import *
 def generateInstructions(astList):
     
     IR = []
+    vars = []
 
     for tree in astList:
         if isinstance(tree,Assign):
@@ -27,6 +28,7 @@ def generateInstructions(astList):
             
                 moveNode = MovL((tmp1,assignmentVariable))
                 addNode = AddL((tmp2,assignmentVariable))
+                vars.extend([tmp1,tmp2,assignmentVariable])
                 #print moveNode
                 
                 IR.extend([moveNode,addNode])
@@ -40,23 +42,29 @@ def generateInstructions(astList):
                     tmp = Con(tree.expr.expr.value)
                 moveNode = MovL((tmp,assignmentVariable))
                 negNode = NegL(assignmentVariable)
+                
                 IR.extend([moveNode,negNode])
+                vars.extend([tmp,assignmentVariable])
 
             elif isinstance(tree.expr,Const):
                 moveNode = MovL((Con(tree.expr.value),assignmentVariable))
                 IR.extend([moveNode])
+                vars.extend([assignmentVariable])
 
             elif isinstance(tree.expr,Name):
                 moveNode = MovL((Var(tree.expr.name),assignmentVariable))
                 IR.extend([moveNode])
+                vars.extend([Var(tree.expr.name),assignmentVariable])
                     
             elif isinstance(tree.expr,CallFunc):
                     funcNode = Call("input")
                     moveNode = MovL((Register("%eax"),assignmentVariable))
+                    vars.extend([assignmentVariable])
                         
         elif isinstance(tree,Printnl):
             if isinstance(tree.nodes[0],Name):
                 pushNode = Push(Var(tree.nodes[0].name))
+                vars.extend([Var(tree.nodes[0].name)])
             elif isinstance(tree.nodes[0],Const):
                 pushNode = Push(Con(tree.nodes[0].value))
 
@@ -65,7 +73,7 @@ def generateInstructions(astList):
             IR.extend([pushNode,printNode,popStack])
     
 
-    return IR
+    return IR,vars
 
 
 
