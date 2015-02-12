@@ -11,41 +11,46 @@ class graphNode(object):
         self.vertex = vertex
         return
     def __cmp__(self, other):
-        return cmp(self.priority, other.priority)
+        if self.vertex.name == '$regtemp':
+            return True
+        elif other.vertex.name == '$regtemp':
+            return False
+        else:
+            return cmp(self.priority, other.priority)
 
 def colorSpill(interferenceGraph,instructionList,livenessSet):
-    counter = -4
     vertices = interferenceGraph.keys()
-    coloring= colorGraph(interferenceGraph)
+    coloring={}
     foundIllegal = 0
-    # NOTE - condition for while needs to change. But currently there are no registers in Interference graph, so I need to add the length of registers 
-  #   while (len(coloring) < len(vertices) + len(registers)) and (foundIllegal==0):
-  #   	#spill code here
-  #   	for vertex in vertices:
-  #   		if vertex not in coloring.keys():
-  #   			coloring[vertex] = counter
-  #   			counter = counter- 4
-		# #check for illegal instructions
-		# newinstList= []
-		# for index,instruction in enumerate(instructionList):
-		# 	if isinstance(instruction,AddL):
-		# 		if (isinstance(instruction.left,Var)) and (isinstance(instruction.right,Var)) and (coloring[instruction.left] < 0) and (coloring[instruction.right] < 0):
-		# 			newinstList.append(MovL((instruction.left,Var('$regtemp'))))
-		# 			newinstList.append(AddL((Var('$regtemp'),instruction.right)))
-		# 			foundIllegal = 1 
-		# 		else:
-		# 			newinstList.append(instruction)
-		# 	elif isinstance(instruction,MovL):
-		# 		if (isinstance(instruction.left,Var)) and (isinstance(instruction.right,Var)) and (coloring[instruction.left] < 0) and (coloring[instruction.right] < 0):
-		# 			newinstList.append(MovL((instruction.left,Var('$regtemp'))))
-		# 			newinstList.append(MovL((Var('$regtemp'),instruction.right)))
-		# 			foundIllegal = 1 
-		# 		else:
-		# 			newinstList.append(instruction)
-		# 	else:
-		# 		newinstList.append(instruction)
-    return coloring
-
+    while foundIllegal==0:
+        coloring=colorGraph(interferenceGraph)
+        counter = -4
+    	for vertex in vertices:
+    		if vertex not in coloring.keys():
+    			coloring[vertex] = counter
+    			counter -= 4
+        newinstList = []
+        foundIllegal = 1
+        for index,instruction in enumerate(instructionList):
+            if isinstance(instruction,MovL):
+                if coloring.has_key(instruction.left) and coloring.has_key(instruction.right):
+                    if coloring[instruction.left]<0 and coloring[instruction.right]<0:
+                        newinstList.append(MovL((instruction.left,Var('$regtemp'))))
+                        newinstList.append(MovL((Var('$regtemp'),instruction.right)))
+                        livevar = livenessSet[index+1]
+                        if not interferenceGraph.has_key(Var('$regtemp')):
+                            interferenceGraph[Var('$regtemp')] = set()
+                        for vertex in [v for v in vertices if v!=Var('$regtemp') and v!= instruction.left]:
+                            interferenceGraph[Var('$regtemp')] = interferenceGraph[Var('$regtemp')]| set([v])
+                        foundIllegal=0
+                    else:
+                        newinstList.append(instruction)
+                else:
+                    newinstList.append(instruction)
+            else:
+                newinstList.append(instruction)
+        instructionList = newinstList
+    return coloring,newinstList
 
 def colorGraph(interferenceGraph):
 	coloring = {} # dictionary store colors

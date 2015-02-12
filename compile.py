@@ -70,7 +70,7 @@ if __name__ == '__main__':
             print str(k) +": " + str(iG[k])
 
         print "\ncoloring"
-        coloring = colorSpill(iG,IR,liveness)
+        coloring, IR = colorSpill(iG,IR,liveness)
         print coloring
 #print
 
