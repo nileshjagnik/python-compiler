@@ -20,8 +20,11 @@ Stage 1 Coverage:
 * unary minus (-)
 * binary plus
 
-Stage 2 (Current Stage):
+Stage 2 
 * We make a parser in python that works for the language subset from stage 1.
+
+Stage 3 (Current Stage):
+* This stage is about register allocations to make code run faster.
 
 Credits
 =======
