@@ -19,6 +19,9 @@ class AddL(Instruction):
 
     def __repr__(self):
         return "%s %s, %s" % (repr(self.instruction),repr(self.left), repr(self.right))
+    
+    def __str__(self):
+            return "%s %s, %s" % (str(self.instruction),str(self.left), str(self.right))
 
 class MovL(Instruction):
     def __init__(self,leftright):
@@ -32,6 +35,9 @@ class MovL(Instruction):
     def __repr__(self):
         return "%s %s,%s" % (repr(self.instruction),repr(self.left), repr(self.right))
 
+    def __str__(self):
+            return "%s %s, %s" % (str(self.instruction),str(self.left), str(self.right))
+
 class NegL(Instruction):
     def __init__(self,value):
         self.instruction = "negl"
@@ -42,6 +48,9 @@ class NegL(Instruction):
 
     def __repr__(self):
         return "%s %s" % (repr(self.instruction),repr(self.value))
+
+    def __str__(self):
+            return "%s %s" % (str(self.instruction),str(self.value))
 
 
 class Call(Instruction):
@@ -55,6 +64,9 @@ class Call(Instruction):
     def __repr__(self):
             return "%s %s" % (repr(self.instruction),repr(self.funcName))
 
+    def __str__(self):
+                return "%s %s" % (str(self.instruction),str(self.funcName))
+
 class Push(Instruction):
     def __init__(self,argument):
         self.instruction = "pushl"
@@ -65,6 +77,9 @@ class Push(Instruction):
                           
     def __repr__(self):
         return "%s %s" % (repr(self.instruction),repr(self.argument))
+
+    def __str__(self):
+        return "%s %s" % (str(self.instruction),str(self.argument))
 
 
 
@@ -79,6 +94,9 @@ class Con(Operand):
 
     def __repr__(self):
         return "$%s" % repr(self.value)
+    
+    def __str__(self):
+        return "$%s" % str(self.value)
 
     def __eq__(self,v):
         if isinstance(v,Con):
@@ -101,6 +119,9 @@ class Var(Operand):
     
     def __repr__(self):
         return "%s" % repr(self.name)
+    
+    def __str__(self):
+        return str(self.name)#,repr(self.unspillable))
 
     def __eq__(self,v):
         if isinstance(v,Var):
@@ -123,6 +144,9 @@ class Register(Operand):
 
     def __repr__(self):
         return "%s" % repr(self.register)
+    
+    def __str__(self):
+        return str(self.register)
 
     def __eq__(self,v):
         if isinstance(v,Register):
@@ -146,6 +170,9 @@ class Address(Operand):
 
     def __repr__(self):
         return "%s" % repr(self.address)
+    
+    def __str__(self):
+        return str(self.address)
     
     def __eq__(self,v):
         if isinstance(v, Address):

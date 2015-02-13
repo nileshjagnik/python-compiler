@@ -75,6 +75,23 @@ def generateInstructions(astList):
 
     return IR,vars
 
+def outputCode(instructionList,stackSize,filename):
+    preamble = ".globl main\nmain:\n\tpushl %ebp\n\tmovl %esp, %ebp\n\t"
+    postemble = 'movl $0, %eax\n\tleave\n\tret\n'
+    stackspace = "subl $" + str(stackSize*4)+",%esp\n\n\t"
+    
+    assemblyCode = preamble
+    assemblyCode += stackspace
+    for i in instructionList:
+        assemblyCode +=(str(i))+'\n\t'
+    
+    assemblyCode += postemble
+    targetfile = open(filename+".s", "w")
+    targetfile.truncate()
+    targetfile.write(assemblyCode)
+    targetfile.close()
+
+
 
 
 
