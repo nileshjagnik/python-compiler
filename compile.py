@@ -65,12 +65,12 @@ if __name__ == '__main__':
             print x
         print
         iG = interferenceGraph(IR,liveness,variables)
+        coloring, IR, iG = colorSpill(iG,IR,liveness)
+
         print "interference graph"
         for k in iG.keys():
             print str(k) +": " + str(iG[k])
-
         print "\ncoloring"
-        coloring, IR = colorSpill(iG,IR,liveness)
         print coloring
 #print
 
