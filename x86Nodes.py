@@ -166,7 +166,7 @@ class Register(Operand):
 class Address(Operand):
     def __init__(self,stackLocal):
         self.local = stackLocal
-        self.address = str(local)+"%ebp"
+        self.address = str(stackLocal)+"(%ebp)"
 
     def __repr__(self):
         return "%s" % repr(self.address)
