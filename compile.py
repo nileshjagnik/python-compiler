@@ -29,7 +29,7 @@ if __name__ == '__main__':
     varmap = {}
     (test1,empty) = flatten_ast(exampleAST,varmap)
     
-    debug = 1
+    debug = 0
     
     registerTest = 1
     
@@ -53,36 +53,39 @@ if __name__ == '__main__':
         print varmap
     
     if(registerTest):
-        print
         IR,variables = generateInstructions(test1)
-        print "IR"
-        for x in IR:
-            print x
-        print
-        print "liveness"
+        if debug:
+            print
+            print "IR"
+            for x in IR:
+                print x
+            print
+            print "liveness"
         liveness = livenessAnalysis(IR)
-        for x in liveness:
-            print x
-        print
+        if debug:
+            for x in liveness:
+                print x
+            print
         iG = interferenceGraph(IR,liveness,variables)
+        
         coloring, IR, iG = colorSpill(iG,IR,liveness)
+        
+        if debug:
+            print "interference graph"
+            for k in iG.keys():
+                print str(k) +": " + str(iG[k])
 
-        print "interference graph"
-        for k in iG.keys():
-            print str(k) +": " + str(iG[k])
-        print "\ncoloring"
-        print coloring
-#print
-
-#print iG
-
-
+        if debug:
+            print "\ncoloring"
+            print coloring
+            
+    stacksize = len([x for x in coloring.keys() if coloring[x]<0])
     filename = ""
     prev = sys.argv[1].split('.')[0]
     for k in sys.argv[1].split('.')[1:]:
     	filename += prev
     	prev = "."+k
-    generateX86(test1,filename,varmap)
+    outputCode(convertInstr(IR,coloring),stacksize,filename)
     # print
     # e1 = compiler.parse("x= 3 + input();y=4")
     # test2 = flatten(e1)

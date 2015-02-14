@@ -113,11 +113,32 @@ def colorSpill(interferenceGraph,instructionList,livenessSet):
                     if coloring[instruction.left]<0 and coloring[instruction.right]<0:
                         newinstList.append(MovL((instruction.left,Var('$regtemp'))))
                         newinstList.append(MovL((Var('$regtemp'),instruction.right)))
+                        if not interferenceGraph.has_key(Var('$regtemp')):
+                            interferenceGraph[Var('$regtemp')] = set()
+                        livevar = [v for v in livenessSet[index+1] if v!=Var('$regtemp') and v!= instruction.left and v!= instruction.right]
+                        for vertex in livevar:
+                            interferenceGraph[Var('$regtemp')] = interferenceGraph[Var('$regtemp')]| set([vertex])
+                            if vertex not in interferenceGraph.keys():
+                                interferenceGraph[vertex] = set()
+                            interferenceGraph[vertex] = interferenceGraph[vertex]| set([Var('$regtemp')])
+                        foundIllegal=0
+                    else:
+                        newinstList.append(instruction)
+                else:
+                    newinstList.append(instruction)
+            elif isinstance(instruction,AddL):
+                if coloring.has_key(instruction.left) and coloring.has_key(instruction.right):
+                    if coloring[instruction.left]<0 and coloring[instruction.right]<0:
+                        newinstList.append(MovL((instruction.left,Var('$regtemp'))))
+                        newinstList.append(AddL((Var('$regtemp'),instruction.right)))
                         livevar = livenessSet[index+1]
                         if not interferenceGraph.has_key(Var('$regtemp')):
                             interferenceGraph[Var('$regtemp')] = set()
-                        for vertex in [v for v in vertices if v!=Var('$regtemp') and v!= instruction.left]:
-                            interferenceGraph[Var('$regtemp')] = interferenceGraph[Var('$regtemp')]| set([v])
+                        for vertex in [v for v in livevar if v!=Var('$regtemp') and v!= instruction.left]:
+                            interferenceGraph[Var('$regtemp')] = interferenceGraph[Var('$regtemp')]| set([vertex])
+                            if vertex not in interferenceGraph.keys():
+                                interferenceGraph[vertex] = set()
+                            interferenceGraph[vertex] = interferenceGraph[vertex]| set([Var('$regtemp')])
                         foundIllegal=0
                     else:
                         newinstList.append(instruction)
@@ -174,8 +195,59 @@ def colorGraph(interferenceGraph):
 		for neighbor in interferenceGraph[vertex]:
 			if not coloring.has_key(neighbor):
 			    isat[neighbor] = isat[neighbor] - 1 
-		qsat.update()
+		#qsat.update()
 		if len(colors)>0:
 			coloring[vertex] = colors[0]
 		vertices.remove(vertex)
 	return coloring
+
+
+def convertInstr(instructionList,coloring):
+    newinstList=[]
+    for inst in instructionList:
+        flag =0
+        if isinstance(inst,AddL):
+            if isinstance(inst.left,Var):
+                dest=coloring[inst.left]
+                if dest < 0:
+                    inst.left = Address(dest)
+                else:
+                    inst.left = registers[dest-1]
+            if isinstance(inst.right,Var):
+                dest=coloring[inst.right]
+                if dest < 0:
+                    inst.right = Address(dest)
+                else:
+                    inst.right = registers[dest-1]
+        elif isinstance(inst,MovL):
+            if isinstance(inst.left,Var):
+                dest=coloring[inst.left]
+                if dest < 0:
+                    inst.left = Address(dest)
+                else:
+                    inst.left = registers[dest-1]
+            if isinstance(inst.right,Var):
+                dest=coloring[inst.right]
+                if dest < 0:
+                    inst.right = Address(dest)
+                else:
+                    inst.right = registers[dest-1]
+            if inst.left == inst.right:
+                flag =1
+        elif isinstance(inst,NegL):
+            if isinstance(inst.value,Var):
+                dest=coloring[inst.value]
+                if dest < 0:
+                    inst.value = Address(dest)
+                else:
+                    inst.value = registers[dest-1]
+        elif isinstance(inst,Push):
+            if isinstance(inst.argument,Var):
+                dest=coloring[inst.argument]
+                if dest < 0:
+                    inst.argument = Address(dest)
+                else:
+                    inst.argument = registers[dest-1]
+        if flag ==0:
+            newinstList.append(inst)
+    return newinstList
