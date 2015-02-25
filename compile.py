@@ -1,3 +1,17 @@
+#Alex Gendreau
+#Homework 3: Register Allocation
+#Partner: Nilesh Jagnik
+
+#Acknowledgement:
+'''
+    Python Documentaiton
+    Proirty Queue Implementaiton modeled after this one
+    https://docs.python.org/2/library/heapq.html
+'''
+
+
+
+
 import compiler
 #from parse import *
 import sys
@@ -5,8 +19,7 @@ from flattenAST import *
 from ast2x86 import *
 from x86IR import *
 from registerAllocation import *
-from colorSpill import *
-
+#from allocation import *
 
 
 # python compile.py example1.py
@@ -31,7 +44,7 @@ if __name__ == '__main__':
     
     debug = 0
     
-    registerTest = 1
+    registerTest = 0
     
     #exampleAST = compiler.parse("a = 5 + input() +-6 + input(); print a")
     #varmap = {}
@@ -53,39 +66,110 @@ if __name__ == '__main__':
         print varmap
     
     if(registerTest):
-        IR,variables = generateInstructions(test1)
-        if debug:
-            print
-            print "IR"
-            for x in IR:
-                print x
-            print
+        
+        print
+        IR,vars = generateInstructions(test1)
+        print "IR"
+        for x in IR:
+            print x
+        print
+        done = False
+        totalIter = 0
+        tmp = 0
+    
+        #Basic Algorithm
+        while not done:
+            liveness = livenessAnalysis(IR)
             print "liveness"
-        liveness = livenessAnalysis(IR)
-        if debug:
             for x in liveness:
                 print x
-            print
-        iG = interferenceGraph(IR,liveness,variables)
-        
-        coloring, IR, iG = colorSpill(iG,IR,liveness)
-        
-        if debug:
+            iG = interferenceGraph(IR,liveness,vars)
             print "interference graph"
             for k in iG.keys():
                 print str(k) +": " + str(iG[k])
-
-        if debug:
-            print "\ncoloring"
+            coloring = graphColor(iG)
             print coloring
-            
-    stacksize = len([x for x in coloring.keys() if coloring[x]<0])
+            spill = toSpill(coloring)
+            good,IR,vars,done = allocateRegisters(spill,IR,vars,coloring)
+
+
+        '''
+        print
+        print "liveness"
+        liveness = livenessAnalysis(IR)
+        for x in liveness:
+            print x
+        # print
+        #    print "Vars"
+                # for x in vars:
+                #print x
+        # print
+        iG = interferenceGraph(IR,liveness,vars)
+            # print "interference graph"
+                # for k in iG.keys():
+                #print str(k) +": " + str(iG[k])
+        while not done:
+            coloring = graphColor(iG)
+            #print coloring
+            # print "to spill"
+            spill = toSpill(coloring)
+            #print spill
+
+            good,IR,livesness,iG,done,tmp = allocateRegisters(spill,IR,liveness,iG,coloring,tmp)
+            print "newIR"
+            for x in IR:
+                print x
+            totalIter+=1
+                #if totalIter>1:
+            '''
+#done = True
+
+        print "Total Iters: " +str(totalIter)
+        outputCode(good,len(spill),"test_1")
+        
+
+#print
+
+#print iG
+
+
     filename = ""
     prev = sys.argv[1].split('.')[0]
     for k in sys.argv[1].split('.')[1:]:
     	filename += prev
     	prev = "."+k
-    outputCode(convertInstr(IR,coloring),stacksize,filename)
+    done = False
+    IR,vars = generateInstructions(test1)
+    tmp = 0
+    #totalIter = 0
+    #Basic Algorithm
+    while not done:
+        liveness = livenessAnalysis(IR)
+        iG = interferenceGraph(IR,liveness,vars)
+        coloring = graphColor(iG)
+        spill = toSpill(coloring)
+        good,IR,vars,done = allocateRegisters(spill,IR,vars,coloring)
+        #print totalIter
+        #totalIter+=1
+   
+    
+    
+    #Attempted optimization
+    '''
+    liveness = livenessAnalysis(IR)
+    iG = interferenceGraph(IR,liveness,vars)
+    while not done:
+        coloring = graphColor(iG)
+        spill = toSpill(coloring)
+        good,IR,liveness,iG,done,tmp = allocateRegisters(spill,IR,liveness,iG,coloring,tmp)
+    '''
+
+#print good
+
+
+    outputCode(good,len(spill),filename)
+
+#generateX86(test1,filename,varmap)
     # print
     # e1 = compiler.parse("x= 3 + input();y=4")
     # test2 = flatten(e1)
@@ -97,3 +181,4 @@ if __name__ == '__main__':
 
     # for t in test2:
     #     prettyPrint(t)
+
