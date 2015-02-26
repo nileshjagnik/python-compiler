@@ -1,7 +1,14 @@
 all: build
 
 build:
-	python compile.py "./tests/test1.py"
+	python compile.py "./tests/exptest.py"
+
+zip:
+	mkdir zipfolder
+	cp *.py zipfolder
+	cp tests/* zipfolder
+	#zip hw.zip zipfolder/*
+	#rm -rf zipfolder
 
 clean:
 	rm *.pyc

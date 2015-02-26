@@ -57,9 +57,10 @@ def generateInstructions(astList):
                 vars.extend([Var(tree.expr.name),assignmentVariable])
                     
             elif isinstance(tree.expr,CallFunc):
-                    funcNode = Call("input")
-                    moveNode = MovL((Register("%eax"),assignmentVariable))
-                    vars.extend([assignmentVariable])
+                funcNode = Call("input")
+                moveNode = MovL((Register("%eax"),assignmentVariable))
+                vars.extend([assignmentVariable])
+                IR.extend([funcNode,moveNode])
                         
         elif isinstance(tree,Printnl):
             if isinstance(tree.nodes[0],Name):
@@ -90,20 +91,3 @@ def outputCode(instructionList,stackSize,filename):
     targetfile.truncate()
     targetfile.write(assemblyCode)
     targetfile.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

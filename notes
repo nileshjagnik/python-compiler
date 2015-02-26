@@ -1,0 +1,11 @@
+{x,z}
+movl x, regtemp  #for y = x
+{regtemp,z}
+movl regtemp, y
+{y,z}
+
+{x,z}
+movl x, regtemp  #for y = x
+{regtemp,z,y}
+addl regtemp, y
+{y,z}

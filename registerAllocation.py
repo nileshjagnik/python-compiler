@@ -21,12 +21,13 @@ def livenessAnalysis(instructionList):
             
             else:
                 live[livePoint] = (live[livePoint+1]-set([i.right]))
-        elif isinstance(i,NegL):
+        elif isinstance(i,NegL) and isinstance(i.value,Var):
             live[livePoint] = (live[livePoint+1]-set([i.value]))|set([i.value])
-        elif isinstance(i,Push):
+        elif isinstance(i,Push) and isinstance(i.argument,Var):
             live[livePoint] = (live[livePoint+1])|set([i.argument])
+        elif isinstance(i,Call):
+            live[livePoint] = live[livePoint+1]
         livePoint = livePoint-1
-
     return live
 
 def interferenceGraph(instructionList,livenessSet,variables):
