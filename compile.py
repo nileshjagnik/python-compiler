@@ -8,6 +8,7 @@ from registerAllocation import *
 from colorSpill import *
 from explicateNJ import *
 from explicateNodes import *
+from typecheck import *
 
 
 # python compile.py example1.py
@@ -17,13 +18,17 @@ from explicateNodes import *
 
 if __name__ == '__main__':
     startAST = compiler.parseFile(sys.argv[1])
-    
+    print "STARTAST:"
     print startAST , "\n"
     explicator = explicateVisitor()
     
     explicateAST = explicator.walk(startAST)
+    print "EXPLICATE_AST:"
+    print explicateAST, "\n"
     
-    print explicateAST
+    print "TYPE CHECKER OUTPUT:"
+    tchecker = typecheckVisitor()
+    tchecker.walk(explicateAST)
     
     debug = 0
     

@@ -1,3 +1,4 @@
 x = [1,2,6]
 y = {}
-z = x[1] if input() + 1 else y
+z = 3
+z = x[1] if not (input() == 2) else ((y or x) and z)

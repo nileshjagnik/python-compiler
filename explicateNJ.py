@@ -13,8 +13,6 @@ class explicateVisitor():
         
         
     def default(self, node):
-        for child in node.getChildNodes(): 
-            self.dispatch(child)
         return node
             
     def walk(self, node):
@@ -61,7 +59,8 @@ class explicateVisitor():
         return Discard(self.dispatch(node.expr))
     
     def visitConst(self,node):
-        # a constant is asssumed to be an integer
+        if node.value == 'True' or node.value=='False':
+            return InjectFrom('BOOL',node)
         return InjectFrom('INT', node)
     
     def visitName(self,node):
@@ -74,6 +73,8 @@ class explicateVisitor():
         nodelist=[]
         for n in node.args:
             nodelist.append(self.dispatch(n))
+        if node.node.name == 'input':
+            return InjectFrom('INT',CallFunc(self.dispatch(node.node),nodelist))
         return CallFunc(self.dispatch(node.node),nodelist)
         
     def visitAdd(self, node):
@@ -94,11 +95,11 @@ class explicateVisitor():
             letcount = letcount + 1
         else:
             rgt = rgtexp
-        ifval = And([Or([Compare(GetTag(lft),[('==', INT)]),Compare(GetTag(lft),[('==', BOOL)])]), Or([Compare(GetTag(rgt),[('==', INT)]),Compare(GetTag(rgt),[('==', BOOL)])])])
+        ifval = And([Or([Compare(GetTag(lft),[('==', Const(INT))]),Compare(GetTag(lft),[('==', Const(BOOL))])]), Or([Compare(GetTag(rgt),[('==', Const(INT))]),Compare(GetTag(rgt),[('==', Const(BOOL))])])])
         
         thenval = InjectFrom('INT', AddInt((ProjectTo('INT',lft),ProjectTo('INT',rgt))))
         
-        elseval = IfExp(And([Compare(GetTag(lft),[('==', BIG)]),Compare(GetTag(rgt),[('==', BIG)])]),InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)])) , CallFunc(Name('$error'),[]))
+        elseval = IfExp(And([Compare(GetTag(lft),[('==', Const(BIG))]),Compare(GetTag(rgt),[('==', Const(BIG))])]),InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)])) , CallFunc(Name('$error'),[]))
         
         if letcount == 1:
             if lft==lftexp:
@@ -142,18 +143,20 @@ class explicateVisitor():
         return And(nodelist)
     
     def visitNot(self,node):
-        return Not(self.dispatch(node.expr))
+        return InjectFrom('BOOL', Not(self.dispatch(node.expr)))
     
     def visitIfExp(self,node):
-        return IfExp(self.dispatch(node.test),self.dispatch(node.then),self.dispatch(node.else_))
+        return IfExp(ProjectTo('BOOL',self.dispatch(node.test)),self.dispatch(node.then),self.dispatch(node.else_))
     
     def visitCompare(self,node):
         nodelist = []
         for n in node.ops:
-            nodelist.append(self.dispatch(n))
+            no = self.dispatch(n[1])
+            tag = no.typ
+            nodelist.append((n[0],ProjectTo(tag,no)))
         if len(nodelist)==0:
             nodelist=node.ops
-        return Compare(self.dispatch(node.test),nodelist)
+        return InjectFrom('BOOL', Compare(ProjectTo('INT',self.dispatch(node.expr)),nodelist))
     
     def visitSubscript(self,node):
         nodelist = []
