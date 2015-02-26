@@ -1,14 +1,15 @@
 #import compiler
 from compiler.ast import *
+from explicate import *
 
 tempLabel=0
 label="$tmp"
 
 
-def flatten(n):
+def flatten_module(n):
    
     if isinstance(n, Module):
-        return flatten(n.node,map)
+        return flatten_module(n.node)
 
     elif isinstance(n, Stmt):
         flat = []
@@ -17,7 +18,7 @@ def flatten(n):
         for x in n.nodes:
             pre = flatten_statement(x)
             flat.extend(pre)
-
+    
         return flat
 
 def flatten_statement(s):
@@ -48,7 +49,7 @@ def flatten_statement(s):
 
 
 def flatten_expression(e):
-
+    global tempLabel
     if isinstance(e, AssName):
         return ([],e)
 
@@ -64,6 +65,17 @@ def flatten_expression(e):
         preLeft.extend(preRight)
         newName = label+str(tempLabel)
         newNode = Assign([AssName(newName,'OP_ASSIGN')],Add((rLeft,rRight)))
+        tempLabel = tempLabel+1
+        preLeft.append(newNode)
+        #print n
+        return (preLeft,Name(newName))
+
+    elif isinstance(e, AddInteger):
+        (preLeft,rLeft) = flatten_expression(e.left)
+        (preRight,rRight) = flatten_expression(e.right)
+        preLeft.extend(preRight)
+        newName = label+str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],AddInteger((rLeft,rRight)))
         tempLabel = tempLabel+1
         preLeft.append(newNode)
         #print n
@@ -87,31 +99,36 @@ def flatten_expression(e):
 
 
     elif isinstance(e,IfExp):
-        (preTest,resultTest) = flatten_expression(self.test)
-        #(preThen,resultThen) = flatten_expression(self.then)
-        #(preElse,resultElse) = flatten_expression(self.else_)
+        (preTest,resultTest) = flatten_expression(e.test)
+        #(preThen,resultThen) = flatten_expression(e.then)
+        #(preElse,resultElse) = flatten_expression(e.else_)
         newNameTest = label+str(tempLabel)
         newNode = Assign([AssName(newNameTest,'OP_ASSIGN')],resultTest)
         tempLabel+=1
         
         newNameResult = label+str(tempLabel)
-        newNodeThen = Assign([AssName(newNameResult,'OP_ASSIGN')],self.then)
-        newNodeElse = Assign([AssName(newNameResult,'OP_ASSIGN')],self.else_)
+        (preThen,resultThen) = flatten_expression(e.then)
+        (preElse,resultElse) = flatten_expression(e.else_)
+        newNodeThen = Assign([AssName(newNameResult,'OP_ASSIGN')],resultThen)
+        newNodeElse = Assign([AssName(newNameResult,'OP_ASSIGN')],resultElse)
         tempLabel+=1
-        ifNode = If([newNode,Stmt([newNodeThen])],Stmt([newNodeElse]))
+        preThen.append(newNodeThen)
+        preElse.append(newNodeElse)
+        ifNode = If([newNode,Stmt(preThen)],Stmt(preElse))
         preTest.append(newNode)
         preTest.append(ifNode)
         return(preTest,Name(newNameResult))
 
-
-
-    elif isinstance(e,Compare):
+    elif isinstance(e,Compare): #dispacth TODO
+        #print e.ops[0]
         (preLeft,rLeft) = flatten_expression(e.expr)
-        (preRight,rRight) = flatten_expression(e.ops[1])
-        e.ops[1] = rRight
+        (preRight,rRight) = flatten_expression(e.ops[0][1])
+        newOps = (e.ops[0][0],rRight)
+        #print newOps
+        #e.ops[0][1] = rRight
         
         newName = label+str(tempLabel)
-        newNode = Assign([AssName(newName,'OP_ASSIGN')],Compare(rLeft,e.ops))
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],Compare(rLeft,newOps))
         tempLabel = tempLabel +1
     
         preLeft.extend(preRight)
@@ -119,14 +136,41 @@ def flatten_expression(e):
         return (preLeft,Name(newName)) #do i think this is correct?
 
     elif isinstance(e,And): #TODO
-        return ([],e)
+        
+        (preLeft,resultLeft) = flatten_expression(e.nodes[0])
+        (preRight,resultRight) = flatten_expression(e.nodes[1])
+        preRight.append(resultRight) #may be unnecessary or wrong?
+        
+        ifNode = If([resultLeft,Stmt(preRight)],Stmt([resultLeft]))
+        
+        newName = label + str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],ifNode)
+        tempLabel+=1
+        
+        preLeft.append(ifNode)
+        return (preLeft,Name(newName))
+    
     elif isinstance(e,Or): #TODO
-        return ([],e)
+        
+        (preLeft,resultLeft) = flatten_expression(e.nodes[0])
+        (preRight,resultRight) = flatten_expression(e.nodes[1])
+        preRight.append(resultRight) #may be unnecessary or wrong?
+        
+        ifNode = If([resultLeft,Stmt([resultLeft])],Stmt(preRight))
+        
+        newName = label + str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],ifNode)
+        tempLabel+=1
+        
+        preLeft.append(ifNode)
+        return (preLeft,Name(newName))
+
     elif isinstance(e,Not):
         (pre,result) = flatten_expression(e.expr)
         newNode = Not(result)
         return (pre,newNode)
-    elif isintance(e,List):
+
+    elif isinstance(e,List):
         preProc = []
         flatList = []
         for n in e.nodes:
@@ -141,8 +185,20 @@ def flatten_expression(e):
             
         return (preProc,Name(newName))
 
-    elif isinstance(e,Dict): #TODO
-        return ([],e)
+    elif isinstance(e,Dict): #TODO, is this unneccessary???
+        newDict = []
+        newPre = []
+        for i in e.items:
+            (pre,result) = flatten_expression(i[1])
+            newDict.append((i[0],result))
+            newPre.extend(pre)
+
+        newName = label+str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],Dict(newDict))
+        tempLabel = tempLabel +1
+
+        return (newPre,Name(newName))
+
     
     elif isinstance(e,Subscript):
         return ([],e)
