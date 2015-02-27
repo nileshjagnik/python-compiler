@@ -64,6 +64,8 @@ class typecheckVisitor():
         return INT
     
     def visitName(self,node):
+        if node.name == 'False' or node.name == 'True':
+            return BOOL
         t = self.env[node.name]
         return t
         

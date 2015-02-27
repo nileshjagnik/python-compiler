@@ -64,6 +64,8 @@ class explicateVisitor():
         return InjectFrom('INT', node)
     
     def visitName(self,node):
+        if node.name == 'True' or node.name == 'False':
+            return InjectFrom('BOOL',node)
         return node
         
     def visitUnarySub(self,node):
