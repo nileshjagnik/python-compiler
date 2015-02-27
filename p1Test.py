@@ -96,7 +96,7 @@ if __name__ == '__main__':
     
     explicateAST = explicate(exampleAST)
     printAst(explicateAST)
-    print
+    #print
     
     flatAst = flatten_module(explicateAST)
     

@@ -1,5 +1,6 @@
 from compiler.ast import *
 from x86Nodes import *
+from explicate import *
 
 def generateInstructions(astList):
     
@@ -77,30 +78,84 @@ def generateInstructions(astList):
                 vars.add(Var(tree.expr.name))
                 vars.add(assignmentVariable)
             
-            elif isinstance(tree.expr,Subscript):
-            #call func to get subscript
-            
-            elif isinstance(tree.expr,GetTag):
-            #call func tag
-            
-            elif isinstance(tree.expr,ProjectTo):
-            #call correct project function
-            
-            elif isinstance(tree.expr,InjectFrom):
-            #call correct inject function
-            
-            
-                    
             elif isinstance(tree.expr,CallFunc):
-                    args = tree.expr.args
-                    name = tree.expr.args.node.name
-                    funcNode = Call("name")
-                    for a in args:
-                        pushNode(a)
+                    funcNode = Call("input")
+                   
                     moveNode = MovL((Register("%eax"),assignmentVariable))
                     IR.extend([funcNode,moveNode])
                     vars.add(assignmentVariable)
-                        
+
+            elif isinstance(tree.expr,GetTag):
+                if isinstance(tree.expr.arg,Name):
+                    pushNode = Push(Var(tree.expr.arg))
+                    vars.add(Var(tree.expr.arg))
+                elif isinstance(tree.nodes[0],Const):
+                    pushNode = Push(Con(tree.expr.arg))
+            
+                tagNode = Call("tag")
+                popStack = AddL((Con(4),Register("%esp")))
+                moveNode = MovL((Register("%eax"),assignmentVariable))
+                IR.extend([pushNode,tagNode,popStack,moveNode])
+
+            elif isinstance(tree.expr,ProjectTo):
+                type = tree.expr.typ
+                if isinstance(tree.expr.arg,Name):
+                    pushNode = Push(Var(tree.expr.arg))
+                    vars.add(Var(tree.expr.arg))
+                elif isinstance(tree.nodes[0],Const):
+                    pushNode = Push(Con(tree.expr.arg))
+                if type == 'int':
+                    projectNode = Call('project_int')
+                elif type == 'bool':
+                    projectNode = Call('project_bool')
+                else:
+                    projectNode = Call('project_big')
+                
+                popStack = AddL((Con(4),Register("%esp")))
+                moveNode = MovL((Register("%eax"),assignmentVariable))
+                IR.extend([pushNode,projectNode,popStack,moveNode])
+
+            elif isinstance(tree.expr,InjectFrom):
+                type = tree.expr.typ
+                if isinstance(tree.expr.arg,Name):
+                    pushNode = Push(Var(tree.expr.arg))
+                    vars.add(Var(tree.expr.arg))
+                elif isinstance(tree.nodes[0],Const):
+                    pushNode = Push(Con(tree.expr.arg))
+                if type == 'int':
+                    injectNode = Call('inject_int')
+                elif type == 'bool':
+                    injectNode = Call('inject_bool')
+                else:
+                    injectNode = Call('inject_big')
+                
+                popStack = AddL((Con(4),Register("%esp")))
+                moveNode = MovL((Register("%eax"),assignmentVariable))
+                IR.extend([pushNode,injectNode,popStack,moveNode])
+
+            elif isinstance(tree.expr,Subscript):
+                expr = e.expr
+                subs = e.subs[0]
+                type = tree.expr.typ
+                pushCollection = Push(Var(expr))
+                vars.add(Var(expr))
+                
+                if isinstance(subs,Name):
+                    pushNode = Push(Var(subs))
+                    vars.add(Var(subs))
+                elif isinstance(subs,Const):
+                    pushNode = Push(Con(subs))
+                subNode = Call('get_subscript')
+                popStack = AddL((Con(4),Register("%esp")))
+                moveNode = MovL((Register("%eax"),assignmentVariable))
+
+                IR.extend([pushCollection,pushNode,subNode,popStack,moveNode])
+
+            elif isinstance(tree.expr,Dict):
+                x = 1 #TODO
+            elif isinstance(tree.expr,List):
+                x = 1 #TODO
+    
         elif isinstance(tree,Printnl):
             if isinstance(tree.nodes[0],Name):
                 pushNode = Push(Var(tree.nodes[0].name))
@@ -137,9 +192,6 @@ def generateInstructions(astList):
 
             IR.extend(If(s,instrElse))
                         
-
-            
-
     return IR,vars
 
 def outputCode(instructionList,stackSize,filename):
@@ -158,6 +210,20 @@ def outputCode(instructionList,stackSize,filename):
     targetfile.write(assemblyCode)
     targetfile.close()
 
+
+'''
+    elif isinstance(tree.expr,Subscript):
+    #call func to get subscript
+    
+    elif isinstance(tree.expr,GetTag):
+    #call func tag
+    
+    elif isinstance(tree.expr,ProjectTo):
+    #call correct project function
+    
+    elif isinstance(tree.expr,InjectFrom):
+    #call correct inject function
+'''
 
 
 

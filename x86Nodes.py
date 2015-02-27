@@ -54,16 +54,16 @@ class NegL(Instruction):
 
 
 class Call(Instruction):
-    def __init__(self, funcName,args):
+    def __init__(self, funcName):
         self.instruction = "call"
         self.funcName = funcName
-        self.args = args
+    #self.args = args
 
     def getInputs(self):
-        return self.funcName, self.args
+        return self.funcName
 
     def __str__(self):
-            return "%s %s %s" % (str(self.instruction),str(self.funcName),str(self.args))
+            return "%s %s" % (str(self.instruction),str(self.funcName))
 
     def __repr__(self):
         return "%s %s" % (repr(self.instruction),repr(self.funcName))

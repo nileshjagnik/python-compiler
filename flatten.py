@@ -9,6 +9,7 @@ label="$tmp"
 def flatten_module(n):
    
     if isinstance(n, Module):
+        print "here"
         return flatten_module(n.node)
 
     elif isinstance(n, Stmt):
@@ -17,8 +18,6 @@ def flatten_module(n):
         #print len(n.nodes)
         for x in n.nodes:
             print x
-            print "here"
-            print
             pre = flatten_statement(x)
             #print
             #print pre
@@ -32,7 +31,6 @@ def flatten_statement(s):
         flat = []
         for x in s.nodes:
             (pre,result) = flatten_expression(x)
-            #print result
             newNode = Printnl([result],None)
             flat.extend(pre)
             flat.append(newNode)
@@ -98,13 +96,43 @@ def flatten_expression(e):
     
     #Very specific for this assignment
     elif isinstance(e, CallFunc):
-        print "HERE"
         newName = label+str(tempLabel)
         newNode = Assign([AssName(newName,'OP_ASSIGN')],e)
-        print "new Node"
-        print newNode
+       
         tempLabel = tempLabel+1
         return ([newNode],Name(newName))
+
+    elif isinstance(e,List):
+        elements = []
+        pre = []
+        for exp in e:
+            (preP,result) = flatten_Expression(exp)
+            elements.append(result)
+            pre.extend(pre)
+        
+        newName = label+str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],List(elements))
+        pre.append(newNode)
+        tempLabel+=1
+        
+        return (pre,Name(newName))
+
+    elif isinstance(e,Dict):
+        dict = [] #potentially supported the adding of keys?
+        pre = []
+        for exp in e.items:
+            (preK,key) = flatten_expression(exp[0])
+            (preV,value) = flatten_expression(exp[1])
+            pre.extend(preK)
+            pre.extend(preV)
+            dict.append((key,value))
+        
+        newName = label+str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],Dict(dict))
+        pre.append(newNode)
+        tempLabel+=1
+
+        return (pre,Name(newName))
 
 
     elif isinstance(e,IfExp):
@@ -147,24 +175,30 @@ def flatten_expression(e):
         preLeft.append(newNode)
         return (preLeft,Name(newName)) #do i think this is correct?
 
-
-
     
     elif isinstance(e,Subscript):
-        return ([],e)
+        #print e.subs[0]
+        (preE,expr) = flatten_expression(e.expr)
+        (preS,subs) = flatten_expression(e.subs[0])
+        preE.extend(preS)
+        newName = label+str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],Subscript(expr,'OP_APPLY',[subs]))
+        tempLabel = tempLabel +1
+        preE.append(newNode)
+        return (preE,Name(newName))
     
     elif isinstance(e,ProjectTo):
         (pre,result) = flatten_expression(e.arg)
-        #newName = label+str(tempLabel)
-        #newNode = Assign([AssName(newName,'OP_ASSIGN')],ProjectTo(e.typ,result))
-        #tempLabel = tempLabel +1
+        newName = label+str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],ProjectTo(e.typ,result))
+        tempLabel = tempLabel +1
         newNode = ProjectTo(e.typ,result)
-        #pre.append(newNode)
-        return (pre,newNode)
+        pre.append(newNode)
+        return (pre,Name(newName))
 
     elif isinstance(e,InjectFrom):
         (pre,result) = flatten_expression(e.arg)
-        '''
+        
         newName = label+str(tempLabel)
         newNode = Assign([AssName(newName,'OP_ASSIGN')],InjectFrom(e.typ,result))
         tempLabel = tempLabel +1
@@ -174,21 +208,23 @@ def flatten_expression(e):
         '''
         newNode = InjectFrom(e.typ,result)
         return (pre,newNode)
+        '''
 
     elif isinstance(e,GetTag):
         #print e
         (pre,result) = flatten_expression(e.arg)
-        '''
+        
         newName = label+str(tempLabel)
         newNode = Assign([AssName(newName,'OP_ASSIGN')],GetTag(result))
         tempLabel = tempLabel +1
         pre.append(newNode)
 
         return (pre,Name(newName))
+        
         '''
-
         newNode = GetTag(result)
         return (pre,newNode)
+        '''
 
     elif isinstance(e,Let):
         (pre,resultLet) = flatten_expression(e.rhs)

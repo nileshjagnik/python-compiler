@@ -1,2 +1,2 @@
-dic={1:1+2,2:False+True}
-print dic
+dic={1:True + False}
+print dic[1]

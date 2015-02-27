@@ -15,7 +15,7 @@
 import compiler
 #from parse import *
 import sys
-from flattenAST import *
+from flatten import *
 from ast2x86 import *
 from x86IR import *
 from registerAllocation import *
@@ -30,8 +30,8 @@ from explicate import *
 
 if __name__ == '__main__':
     exampleAST = compiler.parseFile(sys.argv[1])
-    #explicateAST = explicate(exampleAST)
-    #print explicateAST
+    explicateAST = explicate(exampleAST)
+    print explicateAST
     #f = open(sys.argv[1])
     #program = f.read()
     #print program
@@ -43,17 +43,18 @@ if __name__ == '__main__':
         #exampleAST = yacc.parse(program)
     #print exampleAST
 
-    varmap = {}
-    (test1,empty) = flatten_ast(exampleAST,varmap)
-    
+
+    test1 = flatten_module(explicateAST)
+    print 
+    print test1
     debug = 0
     
-    registerTest = 0
+    registerTest = 1
     
     #exampleAST = compiler.parse("a = 5 + input() +-6 + input(); print a")
     #varmap = {}
     #(test1,empty) = flatten_ast(exampleAST,varmap)
-    
+    '''
     if(debug):
         # Give the lexer some input
         #lex.input(program)
@@ -68,11 +69,12 @@ if __name__ == '__main__':
         for t in test1:
             print t
         print varmap
-    
+    '''
     if(registerTest):
         
         print
         IR,vars = generateInstructions(test1)
+        print vars
         print "IR"
         for x in IR:
             print x
@@ -128,8 +130,8 @@ if __name__ == '__main__':
             '''
 #done = True
 
-        print "Total Iters: " +str(totalIter)
-        outputCode(good,len(spill),"test_1")
+    print "Total Iters: " +str(totalIter)
+    outputCode(good,len(spill),"test_1")
         
 
 #print
