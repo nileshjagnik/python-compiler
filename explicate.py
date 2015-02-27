@@ -88,12 +88,8 @@ def explicate(astNode):
     elif isinstance(astNode,Stmt):
         stmts = []
         for n in astNode.nodes:
-            print n
-            x = explicate_statement(n)
-            print x
-            stmts.extend(x)
-            print "here1"
-
+            stmts.append(explicate_statement(n))
+        
         return Stmt(stmts)
 
 def explicate_statement(s):
