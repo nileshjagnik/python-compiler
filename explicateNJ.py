@@ -95,11 +95,21 @@ class explicateVisitor():
             letcount = letcount + 1
         else:
             rgt = rgtexp
-        ifval = And([Or([Compare(GetTag(lft),[('==', Const(INT))]),Compare(GetTag(lft),[('==', Const(BOOL))])]), Or([Compare(GetTag(rgt),[('==', Const(INT))]),Compare(GetTag(rgt),[('==', Const(BOOL))])])])
+        
+        n1 = Compare(GetTag(lft),[('==', Const(INT))])
+        n2 = Compare(GetTag(lft),[('==', Const(BOOL))])
+        ifvalcond1 = IfExp(CallFunc(Name('is_true'),[n1]),n1,n2)
+        
+        n1 = Compare(GetTag(rgt),[('==', Const(INT))])
+        n2 = Compare(GetTag(rgt),[('==', Const(BOOL))])
+        ifvalcond2 = IfExp(CallFunc(Name('is_true'),[n1]),n1,n2)
+        ifval = IfExp(CallFunc(Name('is_true'),[ifvalcond1]),ifvalcond2,ifvalcond1)
         
         thenval = InjectFrom('INT', AddInt((ProjectTo('INT',lft),ProjectTo('INT',rgt))))
         
-        elseval = IfExp(And([Compare(GetTag(lft),[('==', Const(BIG))]),Compare(GetTag(rgt),[('==', Const(BIG))])]),InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)])) , CallFunc(Name('$error'),[]))
+        n1 = Compare(GetTag(lft),[('==', Const(BIG))])
+        n2 = Compare(GetTag(rgt),[('==', Const(BIG))])
+        elseval = IfExp(IfExp(CallFunc(Name('is_true'),[n1]),n2,n1),InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)])) , CallFunc(Name('$error'),[]))
         
         if letcount == 1:
             if lft==lftexp:
@@ -127,20 +137,14 @@ class explicateVisitor():
         return InjectFrom('BIG',Dict(nodelist))
         
     def visitOr(self,node):
-        nodelist=[]
-        for n in node.nodes:
-            nodelist.append(self.dispatch(n))
-        if len(nodelist)==0:
-            nodelist=node.nodes
-        return Or(nodelist)
+        n1 = self.dispatch(node.nodes[0])
+        n2 = self.dispatch(node.nodes[1])
+        return IfExp(CallFunc(Name('is_true'),[n1]),n1,n2)
     
     def visitAnd(self,node):
-        nodelist=[]
-        for n in node.nodes:
-            nodelist.append(self.dispatch(n))
-        if len(nodelist)==0:
-            nodelist=node.nodes
-        return And(nodelist)
+        n1 = self.dispatch(node.nodes[0])
+        n2 = self.dispatch(node.nodes[1])
+        return IfExp(CallFunc(Name('is_true'),[n1]),n2,n1)
     
     def visitNot(self,node):
         return InjectFrom('BOOL', Not(self.dispatch(node.expr)))

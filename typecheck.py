@@ -85,6 +85,8 @@ class typecheckVisitor():
             return INT
         elif node.node.name == '$error':
             return ERROR
+        elif node.node.name == 'is_true':
+            return BOOL
         return None
         
     def visitAddint(self, node):
