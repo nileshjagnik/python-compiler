@@ -9,7 +9,7 @@ def generateInstructions(astList):
     for tree in astList:
         if isinstance(tree,Assign):
             assignmentVariable = Var(tree.nodes[0].name)
-            if isinstance(tree.expr,Add):
+            if isinstance(tree.expr,Add) or isinstance(tree.expr, AddInteger):
                 if isinstance(tree.expr.left,Name) and isinstance(tree.expr.right,Name):
                     tmp1 = Var(tree.expr.left.name)
                     tmp2 = Var(tree.expr.right.name)
@@ -76,9 +76,27 @@ def generateInstructions(astList):
                 IR.extend([moveNode])
                 vars.add(Var(tree.expr.name))
                 vars.add(assignmentVariable)
+            
+            elif isinstance(tree.expr,Subscript):
+            #call func to get subscript
+            
+            elif isinstance(tree.expr,GetTag):
+            #call func tag
+            
+            elif isinstance(tree.expr,ProjectTo):
+            #call correct project function
+            
+            elif isinstance(tree.expr,InjectFrom):
+            #call correct inject function
+            
+            
                     
             elif isinstance(tree.expr,CallFunc):
-                    funcNode = Call("input")
+                    args = tree.expr.args
+                    name = tree.expr.args.node.name
+                    funcNode = Call("name")
+                    for a in args:
+                        pushNode(a)
                     moveNode = MovL((Register("%eax"),assignmentVariable))
                     IR.extend([funcNode,moveNode])
                     vars.add(assignmentVariable)
@@ -90,10 +108,37 @@ def generateInstructions(astList):
             elif isinstance(tree.nodes[0],Const):
                 pushNode = Push(Con(tree.nodes[0].value))
 
-            printNode = Call("print_int_nl")
+            printNode = Call("print_any")
             popStack = AddL((Con(4),Register("%esp")))
             IR.extend([pushNode,printNode,popStack])
-    
+
+        elif isinstance(tree,If):
+            if_ = []
+            for x in tree.tests:
+                s = []
+                if isinstance(x[0],Name):
+                    compare = Cmpl(Con(0),Var(x[0].name))
+                    var.add(Var(x[0].name))
+                else:
+                    compare = Cmpl((Con(0),Con(x[0].value)))
+                
+                instrIf = []
+                for stmt in x[1]:
+                    (IRif,newVars).generateInstructions(stmt)
+                    instr.add(IRif)
+                    vars = vars | newVars
+                s + [(compare,instrIf)]
+        
+            instrElse = []
+            for e in tree.else_:
+                (IRif,newVars).generateInstructions(e)
+                instr.add(IRif)
+                vars = vars | newVars
+
+            IR.extend(If(s,instrElse))
+                        
+
+            
 
     return IR,vars
 

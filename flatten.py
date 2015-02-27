@@ -16,7 +16,13 @@ def flatten_module(n):
         #print "number of statements"
         #print len(n.nodes)
         for x in n.nodes:
+            print x
+            print "here"
+            print
             pre = flatten_statement(x)
+            #print
+            #print pre
+            #print pre
             flat.extend(pre)
     
         return flat
@@ -92,8 +98,11 @@ def flatten_expression(e):
     
     #Very specific for this assignment
     elif isinstance(e, CallFunc):
+        print "HERE"
         newName = label+str(tempLabel)
         newNode = Assign([AssName(newName,'OP_ASSIGN')],e)
+        print "new Node"
+        print newNode
         tempLabel = tempLabel+1
         return ([newNode],Name(newName))
 
@@ -102,9 +111,9 @@ def flatten_expression(e):
         (preTest,resultTest) = flatten_expression(e.test)
         #(preThen,resultThen) = flatten_expression(e.then)
         #(preElse,resultElse) = flatten_expression(e.else_)
-        newNameTest = label+str(tempLabel)
-        newNode = Assign([AssName(newNameTest,'OP_ASSIGN')],resultTest)
-        tempLabel+=1
+        #newNameTest = label+str(tempLabel)
+        #newNode = Assign([AssName(newNameTest,'OP_ASSIGN')],resultTest)
+        #tempLabel+=1
         
         newNameResult = label+str(tempLabel)
         (preThen,resultThen) = flatten_expression(e.then)
@@ -114,14 +123,17 @@ def flatten_expression(e):
         tempLabel+=1
         preThen.append(newNodeThen)
         preElse.append(newNodeElse)
-        ifNode = If([newNode,Stmt(preThen)],Stmt(preElse))
-        preTest.append(newNode)
+        ifNode = If([resultTest,Stmt(preThen)],Stmt(preElse))
+        
         preTest.append(ifNode)
         return(preTest,Name(newNameResult))
 
     elif isinstance(e,Compare): #dispacth TODO
         #print e.ops[0]
+        #print e.expr
+        #print isinstance(e.expr,GetTag)
         (preLeft,rLeft) = flatten_expression(e.expr)
+        
         (preRight,rRight) = flatten_expression(e.ops[0][1])
         newOps = (e.ops[0][0],rRight)
         #print newOps
@@ -135,82 +147,48 @@ def flatten_expression(e):
         preLeft.append(newNode)
         return (preLeft,Name(newName)) #do i think this is correct?
 
-    elif isinstance(e,And): #TODO
-        
-        (preLeft,resultLeft) = flatten_expression(e.nodes[0])
-        (preRight,resultRight) = flatten_expression(e.nodes[1])
-        preRight.append(resultRight) #may be unnecessary or wrong?
-        
-        ifNode = If([resultLeft,Stmt(preRight)],Stmt([resultLeft]))
-        
-        newName = label + str(tempLabel)
-        newNode = Assign([AssName(newName,'OP_ASSIGN')],ifNode)
-        tempLabel+=1
-        
-        preLeft.append(ifNode)
-        return (preLeft,Name(newName))
-    
-    elif isinstance(e,Or): #TODO
-        
-        (preLeft,resultLeft) = flatten_expression(e.nodes[0])
-        (preRight,resultRight) = flatten_expression(e.nodes[1])
-        preRight.append(resultRight) #may be unnecessary or wrong?
-        
-        ifNode = If([resultLeft,Stmt([resultLeft])],Stmt(preRight))
-        
-        newName = label + str(tempLabel)
-        newNode = Assign([AssName(newName,'OP_ASSIGN')],ifNode)
-        tempLabel+=1
-        
-        preLeft.append(ifNode)
-        return (preLeft,Name(newName))
 
-    elif isinstance(e,Not):
-        (pre,result) = flatten_expression(e.expr)
-        newNode = Not(result)
-        return (pre,newNode)
-
-    elif isinstance(e,List):
-        preProc = []
-        flatList = []
-        for n in e.nodes:
-            (pre,result) = flatten_Expression(n)
-            preProc.extend(pre)
-            flatList.append(result)
-
-        newName = label+str(tempLabel)
-        newNode = Assign([AssName(newName,'OP_ASSIGN')],List(flatList))
-        tempLabel = tempLabel +1
-        preProc.append(newNode)
-            
-        return (preProc,Name(newName))
-
-    elif isinstance(e,Dict): #TODO, is this unneccessary???
-        newDict = []
-        newPre = []
-        for i in e.items:
-            (pre,result) = flatten_expression(i[1])
-            newDict.append((i[0],result))
-            newPre.extend(pre)
-
-        newName = label+str(tempLabel)
-        newNode = Assign([AssName(newName,'OP_ASSIGN')],Dict(newDict))
-        tempLabel = tempLabel +1
-
-        return (newPre,Name(newName))
 
     
     elif isinstance(e,Subscript):
         return ([],e)
     
     elif isinstance(e,ProjectTo):
-        return ([],e)
+        (pre,result) = flatten_expression(e.arg)
+        #newName = label+str(tempLabel)
+        #newNode = Assign([AssName(newName,'OP_ASSIGN')],ProjectTo(e.typ,result))
+        #tempLabel = tempLabel +1
+        newNode = ProjectTo(e.typ,result)
+        #pre.append(newNode)
+        return (pre,newNode)
 
     elif isinstance(e,InjectFrom):
-        return ([],e)
+        (pre,result) = flatten_expression(e.arg)
+        '''
+        newName = label+str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],InjectFrom(e.typ,result))
+        tempLabel = tempLabel +1
+        pre.append(newNode)
+
+        return (pre,Name(newName))
+        '''
+        newNode = InjectFrom(e.typ,result)
+        return (pre,newNode)
 
     elif isinstance(e,GetTag):
-        return ([],e)
+        #print e
+        (pre,result) = flatten_expression(e.arg)
+        '''
+        newName = label+str(tempLabel)
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],GetTag(result))
+        tempLabel = tempLabel +1
+        pre.append(newNode)
+
+        return (pre,Name(newName))
+        '''
+
+        newNode = GetTag(result)
+        return (pre,newNode)
 
     elif isinstance(e,Let):
         (pre,resultLet) = flatten_expression(e.rhs)
@@ -263,7 +241,73 @@ def prettyPrint(n):
     else:
         x =  "error"
 
-
+'''
+    elif isinstance(e,And): #TODO
+    
+    (preLeft,resultLeft) = flatten_expression(e.nodes[0])
+    (preRight,resultRight) = flatten_expression(e.nodes[1])
+    preRight.append(resultRight) #may be unnecessary or wrong?
+    
+    ifNode = If([resultLeft,Stmt(preRight)],Stmt([resultLeft]))
+    
+    newName = label + str(tempLabel)
+    newNode = Assign([AssName(newName,'OP_ASSIGN')],ifNode)
+    tempLabel+=1
+    
+    preLeft.append(ifNode)
+    preLeft.append(newNode)
+    return (preLeft,Name(newName))
+    
+    elif isinstance(e,Or): #TODO
+    
+    (preLeft,resultLeft) = flatten_expression(e.nodes[0])
+    (preRight,resultRight) = flatten_expression(e.nodes[1])
+    preRight.append(resultRight) #may be unnecessary or wrong?
+    
+    ifNode = If([resultLeft,Stmt([resultLeft])],Stmt(preRight))
+    
+    newName = label + str(tempLabel)
+    newNode = Assign([AssName(newName,'OP_ASSIGN')],ifNode)
+    tempLabel+=1
+    
+    preLeft.append(ifNode)
+    preLeft.append(newNode)
+    return (preLeft,Name(newName))
+    
+    elif isinstance(e,Not):
+    (pre,result) = flatten_expression(e.expr)
+    newNode = Not(result)
+    return (pre,newNode)
+    
+    elif isinstance(e,List):
+    preProc = []
+    flatList = []
+    for n in e.nodes:
+    (pre,result) = flatten_Expression(n)
+    preProc.extend(pre)
+    flatList.append(result)
+    
+    newName = label+str(tempLabel)
+    newNode = Assign([AssName(newName,'OP_ASSIGN')],List(flatList))
+    tempLabel = tempLabel +1
+    preProc.append(newNode)
+    
+    return (preProc,Name(newName))
+    
+    elif isinstance(e,Dict): #TODO, is this unneccessary???
+    newDict = []
+    newPre = []
+    for i in e.items:
+    (pre,result) = flatten_expression(i[1])
+    newDict.append((i[0],result))
+    newPre.extend(pre)
+    
+    newName = label+str(tempLabel)
+    newNode = Assign([AssName(newName,'OP_ASSIGN')],Dict(newDict))
+    tempLabel = tempLabel +1
+    
+    return (newPre,Name(newName))
+'''
 
 
 

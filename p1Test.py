@@ -1,5 +1,5 @@
 from compiler.ast import *
-import flatten
+from flatten import *
 import compiler
 #from parse import *
 import sys
@@ -97,9 +97,13 @@ if __name__ == '__main__':
     explicateAST = explicate(exampleAST)
     printAst(explicateAST)
     print
-    flatAst = flatten(explicateAST)
+    
+    flatAst = flatten_module(explicateAST)
+    
     for n in flatAst:
         print n
+    
+#print
 
 
 

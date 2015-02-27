@@ -88,139 +88,175 @@ def explicate(astNode):
     elif isinstance(astNode,Stmt):
         stmts = []
         for n in astNode.nodes:
-            stmts.append(explicate_statement(n))
+            print n
+            x = explicate_statement(n)
+            print x
+            stmts.extend(x)
+            print "here1"
 
         return Stmt(stmts)
 
 def explicate_statement(s):
     if isinstance(s,Printnl):
+        preproc = []
         toPrint = []
         for exp in s.nodes:
-            toPrint.append(explicate_expression(exp))
-        return Printnl(toPrint,None)
+            (pre,result) = explicate_expression(exp)
+            preproc.extend(pre)
+            toPrint.append(result)
+        preproc + [Printnl(toPrint,None)]
     
     elif isinstance(s,Assign):
         #print s.nodes
-        exp = explicate_expression(s.expr)
+        
+        (pre,exp) = explicate_expression(s.expr)
+        
         #target = s.nodes[0] #what am I identifier or subscript?
-        return Assign(s.nodes,exp)
+        #print isinstance(pre,list)
+        #print len(pre)
+        
+        return pre + [Assign(s.nodes,exp)]
+
     
     elif isinstance(s,Discard):
-        return Discard(explicate_expression(s.expr))
+        (pre,exp) = explicate_expression(s.expr)
+        return pre + [(Discard(exp))]
     
 def explicate_expression(e):
     global tempLabel
     if isinstance(e,Const):
-        return e
+        return ([],e)
     elif isinstance(e,Name):
-        return e
-    elif isinstance(e,Compare):
-        expL = explicate_expression(e.expr)
-        expR = explicate_expression(e.ops[1])
-        e.ops[1] = expR
-        return Compare(expL,e.ops)
+        return ([],e)
+
+    elif isinstance(e,UnarySub):
+        (pre,result) = explicate_expression(e.expr)
+        return (pre,UnarySub(explicate_expression(result)))
+    
+    elif isinstance(e,CallFunc):
+        return ([],e)
 
     elif isinstance(e,Or): #assuming only one argument per side
         or_ = []
+        pre = []
         for exp in e.nodes:
-            or_.append(explicate_expression[exp])
-        return Or(or_)
+            (preE,r) = explicate_expression(exp)
+            pre.extend(preE)
+            or_.append(r)
+        return (pre,IfExp(getGuard(or_[0]),or_[0],or_[1]))
 
     elif isinstance(e,And): #assuming only one argument per side
+        #print e
         and_ = []
+        pre = []
         for exp in e.nodes:
-            and_.append(explicate_expression[exp])
-        return And(and_)
+            (preE,r) = explcaite_expression(exp)
+            pre.extend(preE)
+            and_.append(r)
+        return (pre,IfExp(getGuard(and_[0]),and_[1],and_[0]))
+
     
     elif isinstance(e,Not):
-        return Not(ProjectTo('bool',explicate_expression(e.expr)))
+        (pre,result) = explicate_expression(e.expr)
+        value = toPyobj(result)
+        return ([],IfExp(getGuard(value),Name('False'),Name('True')))
 
     elif isinstance(e,Subscript):
-        expr = explicate_expression(e.expr)
-        subs = explicate_expression(e.subs)
-        return Subscript(expr,'OP_APPLY',subs)
+        (preL,expr) = explicate_expression(e.expr)
+        (preR,subs) = explicate_expression(e.subs)
+        preL.extend(preR)
+        return (preL,Subscript(expr,'OP_APPLY',subs))
+                     
 
     elif isinstance(e,List):
-        elements = []
-        for exp in e:
-            elements.extend(explicate_expression(exp))
-        return List(elements)
+        instr = []
+        varName = label + str(tempLabel)
+        tempLabel+=1
+        op = CallFunc(Name('create_list'),[len(e.nodes)])
+        list = Assign([AssName(varName,'OP_ASSIGN')],op)
+        instr.append(list)
+        for (i,exp) in enumerate(e.nodes):
+            (pre,value) = explicate_expression(exp)
+            instr.extend(pre)
+            instr.append(CallFunc(Name('set_subscript'),[InjectFrom('big',Name(varName)),
+                                                         InjectFrom('int',Const(i)),
+                                                         toPyobj(value)]))
+
+        return(instr,Name(varName))
 
     elif isinstance(e,Dict):
         dict = [] #potentially supported the adding of keys?
-        print e
+        #print e
+        varName = label + str(tempLabel)
+        tempLabel+=1
+        list = Assign([(AssName(varName),'OP_ASSIGN')],CallFunc(Name('create_dict'),[]))
+        dict.append(list)
         for exp in e.items:
-            
-            value = explicate_expression(exp[1])
-            #print value
-            dict.append((exp[0],value))
-
-        return Dict(dict)
+            (pre,value) = explicate_expression(exp[1])
+            dict.append(pre)
+            dict.append(CallFunc(Name('set_subscript'),[InjectFrom('big',Name(varName)),
+                                                         InjectFrom('int',Const(exp[0])),
+                                                         toPyObj(value)]))
+        return (dict,Name(varName))
 
     elif isinstance(e,IfExp):
-        test = ProjectTo('bool',explicate_expression(e.test))
-        then = explicate_expression(e.then)
-        else_ = explicate_expression(e.else_)
-        return IfExp(test,then,else_)
+        (preT,test) = explicate_expression(e.test)
+        (preTh,then) = explicate_expression(e.then)
+        (preE,else_) = explicate_expression(e.else_)
+        preT.extend(preTh)
+        preT.extend(preE)
+        return (preT,IfExp(getGuard(test),toPyobj(then),toPyObj(else_)))
 
     elif isinstance(e,Add):
         e1 = e.left
         e2 = e.right
         #print "here"
         if isinstance(e1,Const) and isinstance(e2,Const):
-            return AddInteger((e1,e2))
+            return ([],AddInteger((e1,e2)))
         
         elif isinstance(e1,Name) and isinstance(e2,Name):
-            andBig = And([Compare(GetTag(e1),[('==',Const(3))]),
-                                  Compare(GetTag(e2),[('==',Const(3))])])
-            andPrim = And([Or([Compare(GetTag(e1),[('==',Const(1))]),
-                               Compare(GetTag(e1),[('==',Const(2))])]),
-                           Or([Compare(GetTag(e2),[('==',Const(1))]),
-                               Compare(GetTag(e2),[('==',Const(2))])])])
+            andBig = bothBig(e1,e2)
+            andPrimt = bothPrim(e1,e2)
                                   
             elseNode = IfExp(andBig,InjectFrom('big',CallFunc(Name('add'),[ProjectTo('big',e1),ProjectTo('big',e2)])),CallFunc(Name('error_pyobj'),"error: mismatch"))
             
             ifNode = IfExp(andPrim,InjectFrom('int',AddInteger((ProjectTo('int',e1),ProjectTo('int',e2)))),elseNode)
                 
-            return ifNode
+            return ([],ifNode)
 
         elif isinstance(e1,Name) or isinstance(e1,Const):
             varNode = Name(label + str(tempLabel))
             tempLabel+=1
-            andBig = And([Compare(GetTag(e1),[('==',Const(3))]),
-                          Compare(GetTag(varNode),[('==',Const(3))])])
-            andPrim = And([Or([Compare(GetTag(e1),[('==',Const(1))]),
-                               Compare(GetTag(e1),[('==',Const(2))])]),
-                           Or([Compare(GetTag(varNode),[('==',Const(1))]),
-                               Compare(GetTag(varNode),[('==',Const(2))])])])
+            
+            andBig = bothBig(e1,varNode)
+            andPrimt = bothPrim(e1,varNode)
             
             elseNode = IfExp(andBig,InjectFrom('big',CallFunc(Name('add'),[ProjectTo('big',e1),ProjectTo('big',varNode)])),CallFunc(Name('error_pyobj'),"error: mismatch"))
             
             ifNode = IfExp(andPrim,InjectFrom('int',AddInteger((ProjectTo('int',e1),ProjectTo('int',varNode)))),elseNode)
             
-            letNode = Let(varNode,explicate_expression(e2),ifNode)
+            (pre,result) = explicate_Expression(e2)
+            
+            letNode = Let(varNode,result,ifNode)
                 
-            return letNode
+            return (pre,letNode)
 
         elif isinstance(e2,Name) or isinstance(e2,Const):
             varNode = Name(label + str(tempLabel))
             tempLabel+=1
             
-            andBig = And([Compare(GetTag(varNode),[('==',Const(3))]),
-                          Compare(GetTag(e2),[('==',Const(3))])])
-
-            andPrim = And([Or([Compare(GetTag(varNode),[('==',Const(1))]),
-                               Compare(GetTag(varNode),[('==',Const(2))])]),
-                           Or([Compare(GetTag(e2),[('==',Const(1))]),
-                               Compare(GetTag(e2),[('==',Const(2))])])])
+            andBig = bothBig(varNode,e2)
+            andPrimt = bothPrim(varNode,e2)
             
             elseNode = IfExp(andBig,InjectFrom('big',CallFunc(Name('add'),[ProjectTo('big',varNode),ProjectTo('big',e2)])),CallFunc(Name('error_pyobj'),"error: mismatch"))
             
             ifNode = IfExp(andPrim,InjectFrom('int',AddInteger((ProjectTo('int',varNode),ProjectTo('int',e2)))),elseNode)
             
-            letNode = Let(varNode,explicate_expression(e1),ifNode)
+            (pre,Result) = explicate_expression(e1)
             
-            return letNode
+            letNode = Let(varNode,result,ifNode)
+            
+            return (pre,letNode)
 
         else:
             varNode1 = Name(label+str(tempLabel))
@@ -228,30 +264,50 @@ def explicate_expression(e):
             varNode2 = Name(label+str(tempLabel))
             tempLabel+=1
             
-            andBig = And([Compare(GetTag(varNode1),[('==',Const(3))]),
-                          Compare(GetTag(varNode2),[('==',Const(3))])])
-                             
-            andPrim = And([Or([Compare(GetTag(varNode1),[('==',Const(1))]),
-                               Compare(GetTag(varNode1),[('==',Const(2))])]),
-                           Or([Compare(GetTag(varNode2),[('==',Const(1))]),
-                               Compare(GetTag(varNode2),[('==',Const(2))])])])
+            andBig = bothBig(varNode1,varNode2)
+            andPrim = bothPrim(varNode1,varNode2)
                 
             elseNode = IfExp(andBig,InjectFrom('big',CallFunc(Name('add'),[ProjectTo('big',varNode1),ProjectTo('big',varNode2)])),CallFunc(Name('error_pyobj'),"error: mismatch"))
 
             ifNode = IfExp(andPrim,InjectFrom('int',AddInteger((ProjectTo('int',varNode1),ProjectTo('int',varNode2)))),elseNode)
             
-            letNode = Let(varNode1,explicate_expression(e1),Let(varNode2,explicate_expression(e2),ifNode))
+            (pre1,result1) = explicate_expression(e1)
+            (pre2,result2) = explicate_expression(e2)
             
-            return letNode
+            letNode = Let(varNode1,result1,Let(varNode2,result2,ifNode))
+            
+            return (pre1.extend(pre2),letNode)
+
+    elif isinstance(e,Compare): #add lets
+        (preL,expL) = explicate_expression(e.expr)
+        (preR,expR) = explicate_expression(e.ops[0][1])
         
-    elif isinstance(e,UnarySub):
-        return UnarySub(explicate_expression(e.expr))
-                             
-    elif isinstance(e,CallFunc):
-        return e
-                                                                                
+        if e.ops[0][0]=='==' or e.ops[0][0]=='!=':
+            return (preL,extend(preR),Compare(expL,[(e.ops[0][0],expR)]))
+        
+        else: #dispatch
+            return ([],e)
 
 
+def toPyobj(value):
+    return IfExp(Compare(GetTag(value),[('==',Const(0))]),InjectFrom('int',value),
+                 IfExp(Compare(GetTag(value),[('==',Const(1))]),InjectFrom('bool',value),
+                       InjectFrom('big',value)))
+
+def getGuard(value):
+    return ProjectTo('bool',CallFunc(Name('is_true'),[toPyobj(value)]))
+
+def bothBig(v1,v2):
+    return IfExp(Compare(GetTag(v1),[('==',Const(3))]),
+                 IfExp(Compare(GetTag(v2),[('==',Const(3))]),Name('True'),Name('False')),
+                 Name('False'))
+
+def bothPrim(v1,v2):
+    return IfExp(Compare(GetTag(v1),[('=!',Const(3))]),
+                 IfExp(Compare(GetTag(v2),[('=!',Const(3))]),Name('True'),Name('False')),
+                 Name('False'))
+
+                         
 
 
     

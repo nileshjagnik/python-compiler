@@ -19,6 +19,7 @@ from flattenAST import *
 from ast2x86 import *
 from x86IR import *
 from registerAllocation import *
+from explicate import *
 #from allocation import *
 
 
@@ -29,6 +30,8 @@ from registerAllocation import *
 
 if __name__ == '__main__':
     exampleAST = compiler.parseFile(sys.argv[1])
+    #explicateAST = explicate(exampleAST)
+    #print explicateAST
     #f = open(sys.argv[1])
     #program = f.read()
     #print program
@@ -39,6 +42,7 @@ if __name__ == '__main__':
         #print x'''
         #exampleAST = yacc.parse(program)
     #print exampleAST
+
     varmap = {}
     (test1,empty) = flatten_ast(exampleAST,varmap)
     
@@ -152,7 +156,7 @@ if __name__ == '__main__':
         #print totalIter
         #totalIter+=1
    
-    
+
     
     #Attempted optimization
     '''

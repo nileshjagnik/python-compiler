@@ -54,15 +54,16 @@ class NegL(Instruction):
 
 
 class Call(Instruction):
-    def __init__(self, funcName):
+    def __init__(self, funcName,args):
         self.instruction = "call"
         self.funcName = funcName
+        self.args = args
 
     def getInputs(self):
-        return self.funcName
+        return self.funcName, self.args
 
     def __str__(self):
-            return "%s %s" % (str(self.instruction),str(self.funcName))
+            return "%s %s %s" % (str(self.instruction),str(self.funcName),str(self.args))
 
     def __repr__(self):
         return "%s %s" % (repr(self.instruction),repr(self.funcName))
@@ -80,6 +81,21 @@ class Push(Instruction):
 
     def __repr__(self):
             return "%s %s" % (repr(self.instruction),repr(self.argument))
+
+class CmpL(Instruction):
+    def __init__(self,leftright):
+        self.instruction = "cmpl"
+        self.left = leftright[0]
+        self.right = leftright[1]
+    
+    def getInputs(self):
+        return self.left,self.right
+    
+    def __str__(self):
+        return "%s %s, %s" % (str(self.instruction),str(self.left), str(self.right))
+    
+    def __repr(self):
+        return "%s %s, %s" % (repr(self.instruction),repr(self.left), repr(self.right))
 
 
 
