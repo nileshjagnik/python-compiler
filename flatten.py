@@ -9,7 +9,7 @@ label="$tmp"
 def flatten_module(n):
    
     if isinstance(n, Module):
-        print "here"
+        #print "here"
         return flatten_module(n.node)
 
     elif isinstance(n, Stmt):
@@ -17,7 +17,7 @@ def flatten_module(n):
         #print "number of statements"
         #print len(n.nodes)
         for x in n.nodes:
-            print x
+            #print x
             pre = flatten_statement(x)
             #print
             #print pre
@@ -74,12 +74,12 @@ def flatten_expression(e):
         #print n
         return (preLeft,Name(newName))
 
-    elif isinstance(e, AddInteger):
+    elif isinstance(e, AddInt):
         (preLeft,rLeft) = flatten_expression(e.left)
         (preRight,rRight) = flatten_expression(e.right)
         preLeft.extend(preRight)
         newName = label+str(tempLabel)
-        newNode = Assign([AssName(newName,'OP_ASSIGN')],AddInteger((rLeft,rRight)))
+        newNode = Assign([AssName(newName,'OP_ASSIGN')],AddInt((rLeft,rRight)))
         tempLabel = tempLabel+1
         preLeft.append(newNode)
         #print n
@@ -106,7 +106,7 @@ def flatten_expression(e):
         elements = []
         pre = []
         for exp in e:
-            (preP,result) = flatten_Expression(exp)
+            (preP,result) = flatten_expression(exp)
             elements.append(result)
             pre.extend(pre)
         
@@ -151,7 +151,7 @@ def flatten_expression(e):
         tempLabel+=1
         preThen.append(newNodeThen)
         preElse.append(newNodeElse)
-        ifNode = If([resultTest,Stmt(preThen)],Stmt(preElse))
+        ifNode = If([(resultTest,Stmt(preThen))],Stmt(preElse))
         
         preTest.append(ifNode)
         return(preTest,Name(newNameResult))
@@ -192,7 +192,7 @@ def flatten_expression(e):
         newName = label+str(tempLabel)
         newNode = Assign([AssName(newName,'OP_ASSIGN')],ProjectTo(e.typ,result))
         tempLabel = tempLabel +1
-        newNode = ProjectTo(e.typ,result)
+        #newNode = ProjectTo(e.typ,result)
         pre.append(newNode)
         return (pre,Name(newName))
 

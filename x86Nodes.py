@@ -82,6 +82,21 @@ class Push(Instruction):
     def __repr__(self):
             return "%s %s" % (repr(self.instruction),repr(self.argument))
 
+class IfNode(Instruction):
+    def __init__(self,tests,else_):
+        self.instruction = "IF"
+        self.tests = tests
+        self.else_ = else_
+
+    def getInputs(self):
+        return sefl.tests,self.else_
+    
+    def __str__(self):
+        return "%s %s %s" % (str(self.instruction),str(self.tests),str(self.else_))
+    
+    def __repr__(self):
+        return "%s %s %s" % (repr(self.instruction),repr(self.tests),repr(self.else_))
+
 class CmpL(Instruction):
     def __init__(self,leftright):
         self.instruction = "cmpl"

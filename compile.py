@@ -31,7 +31,7 @@ from explicate import *
 if __name__ == '__main__':
     exampleAST = compiler.parseFile(sys.argv[1])
     explicateAST = explicate(exampleAST)
-    print explicateAST
+    #print explicateAST
     #f = open(sys.argv[1])
     #program = f.read()
     #print program
@@ -45,39 +45,33 @@ if __name__ == '__main__':
 
 
     test1 = flatten_module(explicateAST)
-    print 
-    print test1
-    debug = 0
+    #print
+    #print test1
+    debug = 1
     
     registerTest = 1
     
     #exampleAST = compiler.parse("a = 5 + input() +-6 + input(); print a")
     #varmap = {}
     #(test1,empty) = flatten_ast(exampleAST,varmap)
-    '''
+    
     if(debug):
-        # Give the lexer some input
-        #lex.input(program)
-
-        # Tokenize
-        #while True:
-        #   tok = lex.token()
-        #   if not tok: break      # No more input
-        #    print tok
+        print "Flat"
 
         print len(test1)
         for t in test1:
             print t
-        print varmap
-    '''
+            print
+
     if(registerTest):
         
-        print
+        
         IR,vars = generateInstructions(test1)
         print vars
         print "IR"
         for x in IR:
             print x
+        
         print
         done = False
         totalIter = 0
@@ -130,8 +124,8 @@ if __name__ == '__main__':
             '''
 #done = True
 
-    print "Total Iters: " +str(totalIter)
-    outputCode(good,len(spill),"test_1")
+        print "Total Iters: " +str(totalIter)
+        outputCode(good,len(spill),"test_1")
         
 
 #print

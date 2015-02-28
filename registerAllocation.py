@@ -41,6 +41,7 @@ def total(instructionList): #count line for if statements
     t = 0
     for i in instructionList:
         if isinstance(i,If):
+            print i
             for test in i.tests:
                 t += 1 + len(tests.tests[1])
             t += len(i.else_)
@@ -77,10 +78,11 @@ def computeLivenessPoint(i,liveAfter):
     elif isinstance(i,Call):
         liveBefore = liveAfter
 
-    elif isinstace(i,CmpL):
-        if isinstance(i.left,Var):
+    elif isinstance(i,CmpL):
+        print i 
+        if isinstance(i.left,Var) and not isinstance(i.right,Con):
             liveBefore = (liveAfter-set([i.right]))|set([i.left,i.right])
-        elif isinstance(i.right,Register):
+        elif isinstance(i.right,Register) or isinstance(i.right,Con):
             liveBefore = (liveAfter-set([i.right]))
         else:
             liveBefore = (liveAfter-set([i.right]))|set([i.right])
@@ -133,7 +135,7 @@ def interferenceGraph(instructionList,livenessSet,variables):
     programPoint = 1
     for i in instructionList:
         liveAfter = livenessSet[programPoint]
-        if isinstance(i,If):
+        if isinstance(i,IfNode):
             for t in i.tests:
                 programPoint = programPoint+1
                 for stmt in t[1]:
@@ -142,7 +144,7 @@ def interferenceGraph(instructionList,livenessSet,variables):
                     for (v1,v2) in edges:
                         interference[v1].add(v2)
                         interference[v2].add(v1)
-                    programPoint=ProgramPoint+1
+                    programPoint=programPoint+1
             for e in i.else_:
                 liveAfterE = livenessSet[programPoint]
                 edges = interferencePoint(e,liveAfterE)
