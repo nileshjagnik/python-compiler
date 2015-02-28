@@ -3,7 +3,7 @@ from x86Nodes import *
 from x86IR import *
 from collections import defaultdict
 import heapq
-from explicate import *
+from explicateNodes import *
 
 REMOVED = '<removed-task>'
 
