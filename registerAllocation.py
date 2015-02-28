@@ -40,11 +40,9 @@ class updatePriorityQueue:
 def total(instructionList): #count line for if statements
     t = 0
     for i in instructionList:
-        if isinstance(i,If):
-            print i
-            for test in i.tests:
-                t += 1 + len(tests.tests[1])
-            t += len(i.else_)
+        if isinstance(i,IfNode):
+            t += 1 + total(i.tests[0][1])
+            t += total(i.else_)
         else:
             t += 1
     return t
@@ -79,7 +77,6 @@ def computeLivenessPoint(i,liveAfter):
         liveBefore = liveAfter
 
     elif isinstance(i,CmpL):
-        print i 
         if isinstance(i.left,Var) and not isinstance(i.right,Con):
             liveBefore = (liveAfter-set([i.right]))|set([i.left,i.right])
         elif isinstance(i.right,Register) or isinstance(i.right,Con):
@@ -92,11 +89,12 @@ def computeLivenessPoint(i,liveAfter):
 
 def livenessAnalysis(instructionList):
     totalInstruction = total(instructionList)
+    #print totalInstruction
     live = [set() for index in range(len(instructionList)+1)]
     livePoint = len(instructionList)-1
     for i in reversed(instructionList):
         liveAfter = live[livePoint+1]
-        if isinstance(i,If): #need to fix to handle nested if statements
+        if isinstance(i,IfNode): #need to fix to handle nested if statements
             liveAfterF = liveAfter
             liveAfterE = liveAfter
             for e in reversed(i.else_):
@@ -116,7 +114,7 @@ def livenessAnalysis(instructionList):
                 
                 liveIf = liveIf | set([t[0]])| liveAfterF
     
-            live[livePoint] = liveAfterIf | liveAfterE
+            live[livePoint] = liveAfterF | liveAfterE
         else:
             #print i
             live[livePoint] = computeLivenessPoint(i,liveAfter)
