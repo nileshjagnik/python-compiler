@@ -77,7 +77,7 @@ def generateOne(instr,assignmentVariable):
     elif isinstance(instr,GetTag):
         if isinstance(instr.arg,Name):
             pushNode = Push(Var(instr.arg.name))
-            vars.add(Var(instr.arg))
+            vars.add(Var(instr.arg.name))
         elif isinstance(instr.arg,Const):
             pushNode = Push(Con(instr.arg))
         
@@ -126,16 +126,16 @@ def generateOne(instr,assignmentVariable):
     elif isinstance(instr,Subscript):
         expr = instr.expr
         subs = instr.subs[0]
-        pushCollection = Push(Var(expr))
+        pushCollection = Push(Var(expr.name))
         vars.add(Var(expr))
         
         if isinstance(subs,Name):
             #print subs
-            pushNode = Push(Var(subs))
+            pushNode = Push(Var(subs.name))
             subNode = Call('get_subscript')
             popStack = AddL((Con(4),Register("%esp")))
             moveNode = MovL((Register("%eax"),assignmentVariable))
-            vars.add(Var(subs))
+            vars.add(Var(subs.name))
             
         elif isinstance(subs,Const):
             #print instr
@@ -147,32 +147,69 @@ def generateOne(instr,assignmentVariable):
         return [pushCollection,pushNode,subNode,popStack,moveNode],vars
 
     elif isinstance(instr,Dict):
-        return [],vars #TODO
+        createDictionary = []
+        items = instr.items
+        
+            
+        createDictionary.extend([Call('create_dict'),
+                                 Push(Register("%eax"))])
+        createDictionary.extend([Call('inject_big'),
+                                MovL((Register("%eax"),assignmentVariable)),
+                                AddL((Con(8),Register("%esp")))])
+       
+
+        for (k,v) in items:
+           
+            if isinstance(v,Name):
+                vars.add(Var(v.name))
+                pushNodeV = Push(Var(v.name))
+            else:
+                pushNodeV = Push(Con(v.value))
+            
+            if isinstance(k,Name):
+                vars.add(Var(k.name))
+                pushNodeK = Push(Var(k.name))
+            else:
+                pushNodeK = Push(Con(k.value))
+            
+            pushNodeL = Push(assignmentVariable)
+            callNode = Call('set_subscript')
+            popStack = AddL((Con(12),Register("%esp")))
+            #moveNode = MovL((Register("%eax"),assignmentVariable))
+            createDictionary.extend([pushNodeV,pushNodeK,pushNodeL,callNode,popStack])
+                                               
+        return createDictionary,vars
+
     elif isinstance(instr,List):
         createList = []
         nodes = instr.nodes
-        pushNode = Push(Con(len(nodes)))
-        callNode = Call('create_list')
-        popStack = AddL((Con(4),Register("%esp")))
-        moveNode = MovL((Register("%eax"),assignmentVariable))
-        createList.extend([pushNode,callNode,popStack,moveNode])
-        pushNode = Push(assignmentVariable)
-        callNode = Call('inject_big') #make pyobj
-        popStack = AddL((Con(4),Register("%esp")))
-        moveNode = MovL((Register("%eax"),assignmentVariable))
-        createList.extend([pushNode,callNode,popStack,moveNode])
+        createList.extend([Push(Con(len(nodes))),
+                           Call('inject_int'),
+                           Push(Register("%eax"))])
+
+        createList.extend([Call('create_list'),
+                           Push(Register("%eax"))])
+        
+        createList.extend([Call('inject_big'),
+                           MovL((Register("%eax"),assignmentVariable)),
+                           AddL((Con(12),Register("%esp")))])
+        
+        
         for (i,n) in enumerate(nodes):
+            createList.extend([Push(Con(i)),
+                               Call('inject_int'),
+                               AddL((Con(4),Register("%esp")))])
             if isinstance(n,Name):
                 vars.add(Var(n.name))
                 pushNodeV = Push(Var(n.name))
             else:
                 pushNodeV = Push(Con(n.value))
-            pushNodeK = Push(Con(i))
+            pushNodeK = Push(Register("%eax"))
             pushNodeL = Push(assignmentVariable)
             callNode = Call('set_subscript')
             popStack = AddL((Con(12),Register("%esp")))
-            moveNode = MovL((Register("%eax"),assignmentVariable))
-            createList.extend([pushNodeV,pushNodeK,pushNodeL,callNode,popStack,moveNode])
+            #moveNode = MovL((Register("%eax"),assignmentVariable))
+            createList.extend([pushNodeV,pushNodeK,pushNodeL,callNode,popStack])
         
         return createList,vars
 
@@ -262,6 +299,7 @@ def generateIf(instr):
     s = []
     for x in instr.tests:
         if isinstance(x[0],Name):
+            #do is true here instead
             compare = CmpL((Con(0),Var(x[0].name)))
             vars.add(Var(x[0].name))
         else:

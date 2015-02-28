@@ -41,8 +41,10 @@ def total(instructionList): #count line for if statements
     t = 0
     for i in instructionList:
         if isinstance(i,IfNode):
-            t += 1 + total(i.tests[0][1])
-            t += total(i.else_)
+            for n in i.tests:
+                t += 1 + len(n[1])
+            t += len(i.else_)
+            
         else:
             t += 1
     return t
@@ -88,9 +90,9 @@ def computeLivenessPoint(i,liveAfter):
 
 
 def livenessAnalysis(instructionList):
-    totalInstruction = total(instructionList)
+    totalInstruction = total(instructionList)+1
     #print totalInstruction
-    live = [set() for index in range(len(instructionList)+1)]
+    live = [set() for index in range(totalInstruction)]
     livePoint = len(instructionList)-1
     for i in reversed(instructionList):
         liveAfter = live[livePoint+1]
@@ -104,17 +106,22 @@ def livenessAnalysis(instructionList):
                 liveAfterE = liveBefore
         
             liveIf = set([])
+           
             for t in reversed(i.tests):
+                
                 liveAfterF = liveAfter
                 for stmt in t[1]:
-                    liveB = computeLivenessPoint(i,liveAfterF)
+                    
+                    liveB = computeLivenessPoint(stmt,liveAfterF)
+                    
                     live[livePoint] = liveB
                     livePoint = livePoint-1
                     liveAfterF = liveB
-                
-                liveIf = liveIf | set([t[0]])| liveAfterF
+            
+                liveIf = liveIf | set([Var(t[0].right.name)])| liveAfterF
     
-            live[livePoint] = liveAfterF | liveAfterE
+            live[livePoint] = liveIf | liveAfterE
+            
         else:
             #print i
             live[livePoint] = computeLivenessPoint(i,liveAfter)
@@ -149,7 +156,7 @@ def interferenceGraph(instructionList,livenessSet,variables):
                 for (v1,v2) in edges:
                     interference[v1].add(v2)
                     interference[v2].add(v1)
-                programPoint=ProgramPoint+1
+                programPoint=programPoint+1
         
         else:
             edges = interferencePoint(i,liveAfter)
@@ -292,6 +299,7 @@ def saturation(vertices,interferenceGraph,coloring):
     #print v
     
     #print v
+        print v
         if v.name[0] == "#":
             initSat.add_task(v,-sat,countTmp)
             countTmp = countTmp-1
@@ -328,7 +336,8 @@ def allocateRegisters(toSpill,instructionList,variables,coloring):
     newVars = variables
     newVars.add(tmp)
     for i in instructionList:
-        if isinstance(i,If):
+        if isinstance(i,IfNode):
+            print "here"
             tests = i.tests
             pairG = []
             pairB = []
@@ -337,30 +346,51 @@ def allocateRegisters(toSpill,instructionList,variables,coloring):
             
             else_ = i.else_
             for t in tests:
-                intsG = []
+                instG = []
                 instB = []
                 for stmt in t[1]:
-                    (goodI,badI) = allocateInstruction(toSpill,stmt,variables,coloring,colorMap)
-                    if len(badI)>1:
-                        check = False
-                    instG.append(goodI)
-                    instB.extend(badI)
-                pairG.append((t[0],instG))
+                    print stmt
+                    if isinstance(stmt,IfNode):
+                        
+                        newinstr = [stmt]
+                        (goodI,badI,newVarsIf,check) = allocateRegisters(toSpill,newinstr,variables,coloring)
+                        done = check
+                        newVars = newVars | newVarsIf
+                        good.extend(goodI)
+                        bad.extend(badI)
+                    else:
+                       
+                        (goodI,badI) = allocateInstruction(toSpill,stmt,variables,coloring,colorMap)
+                        if len(badI)>1:
+                            check = False
+                        instG.append(goodI)
+                        instB.extend(badI)
+                if isinstance(t[0].left,Var) and isinstance(t[0].right,Var):
+                    pairG.append((CmpL((colorMap[coloring[t[0].left]],
+                                        colorMap[coloring[t[0].right]])),instG))
+                elif isinstance(t[0].right,Var):
+                    pairG.append((CmpL((t[0].left,colorMap[coloring[t[0].right]])),instG))
+                elif isinstance(t[0].left,Var):
+                    pairG.append((CmpL((colorMap[coloring[t[0].left]],t[0].left)),instG))
+                else:
+                    pairG.append((CmpL((t[0].left,t[1].right)),instG))
                 pairB.append((t[0],instB))
             for e in else_:
                 (goodI,badI) = allocateInstruction(toSpill,stmt,variables,coloring,colorMap)
                 if len(badI)>1:
                     check = False
                 elseG.append(goodI)
-                elseB.extend(goodB)
+                elseB.extend(badI)
 
-            good.append(If(pairG,elseG))
-            bad.append(If(pairB,elseB))
+            good.append(IfNode(pairG,elseG))
+            bad.append(IfNode(pairB,elseB))
 
         else:
             (goodI,badI) = allocateInstruction(toSpill,i,variables,coloring,colorMap)
+            
             if len(badI)>1:
                 check = False
+        
             good.append(goodI)
             bad.extend(badI)
                 
@@ -473,6 +503,50 @@ def allocateInstruction(toSpill,i,variables,coloring,colorMap):
                 goodNode = Push(Register(colorMap[coloring[value]]))
         
         return (goodNode,[i])
+
+    elif isinstance(i,CmpL):
+        print i
+        regl = i.left
+        regr = i.right
+        localR = toSpill.has_key(regr)
+        if isinstance(regr,Register):
+            return (i,[i])
+        elif isinstance(regl,Con):
+            if localR:
+                goodNode = CmpL((regl,Address(toSpill[regr])))
+            else:
+                #print regr
+                goodNode = CmpL((regl,Register(colorMap[coloring[regr]])))
+            return (goodNode,[i])
+        
+        elif isinstance(regr,Con):
+            goodNode = CmpL((Register(colorMap[coloring[regl]]),regr))
+            return (goodNode,[i])
+
+        else:
+            localL = toSpill.has_key(regl)
+            
+            if localL and localR:
+                check = False
+                badNodeMove = MovL((regl,tmp))
+                badNodeAdd = CmpL((tmp,regr))
+                #bad.extend([badNodeMove,badNodeAdd])
+                return (i,[badNodeMove,badNodeAdd])
+            #totalTmp+=1
+            #newVars.add(tmp)
+            #print "BAD VAR"
+            #print i
+            else:
+                if localL:
+                    goodNode = CmpL((Address(toSpill[regl]),Register(colorMap[coloring[regr]])))
+                
+                elif localR:
+                    goodNode = CmpL((Register(colorMap[coloring[regl]]),Address(toSpill[regr])))
+                
+                else:
+                    goodNode = CmpL((Register(colorMap[coloring[regl]]),Register(colorMap[coloring[regr]])))
+                
+                return (goodNode,[i])
 
 
 

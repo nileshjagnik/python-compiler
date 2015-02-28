@@ -19,27 +19,35 @@ from flattenNJ import *
 
 if __name__ == '__main__':
     startAST = compiler.parseFile(sys.argv[1])
-    print "STARTAST:"
-    print startAST , "\n"
+    
     explicator = explicateVisitor()
     
     explicateAST = explicator.walk(startAST)
-    print "EXPLICATE_AST:"
-    for x in explicateAST.node.nodes:
-        print x
     
-    print "\nTYPE CHECKER OUTPUT:"
-    tchecker = typecheckVisitor()
-    tchecker.walk(explicateAST)
+    
+
     
     debug = 1
     
     flatast = flatten(explicateAST)
-    print "\nFLATTENED ASTs:"
+    #print "\nFLATTENED ASTs:"
     
     registerTest = 1
     
     flat = []
+    if (debug):
+        
+        print "STARTAST:"
+        print startAST , "\n"
+        
+        print "EXPLICATE_AST:"
+        for x in explicateAST.node.nodes:
+            print x
+        
+        print "\nTYPE CHECKER OUTPUT:"
+        tchecker = typecheckVisitor()
+        tchecker.walk(explicateAST)
+    
     for a in flatast:
         for k in a:
             if(debug):
@@ -49,20 +57,37 @@ if __name__ == '__main__':
     
     
     if(registerTest):
-        IR,variables = generateInstructions(flat)
-        if debug:
-            print
-            print "IR"
-            for x in IR:
-                print x
-            print
-        print "liveness"
-        liveness = livenessAnalysis(IR)
-        print len(IR),len(liveness)
-        if debug:
+        IR,vars = generateInstructions(flat)
+        
+        print vars
+        print "IR"
+        for x in IR:
+            print x
+
+        done = False
+        totalIter = 0
+        tmp = 0
+
+
+        while not done:
+            liveness = livenessAnalysis(IR)
+            print "liveness"
             for x in liveness:
                 print x
-            print
+            iG = interferenceGraph(IR,liveness,vars)
+            print "interference graph"
+            for k in iG.keys():
+                print str(k) +": " + str(iG[k])
+            coloring = graphColor(iG)
+            print coloring
+            spill = toSpill(coloring)
+            good,IR,vars,done = allocateRegisters(spill,IR,vars,coloring)
+            
+        for g in good:
+            print g
+
+        print "Total Iters: " +str(totalIter)
+        outputCode(good,len(spill),"test_1")
         """
         iG = interferenceGraph(IR,liveness,variables)
         
@@ -84,6 +109,45 @@ if __name__ == '__main__':
         for k in sys.argv[1].split('.')[1:]:
         	filename += prev
         	prev = "."+k
-        outputCode(IR,70,filename) # change these values
+        #outputCode(IR,70,filename) # change these values
+        outputCode(good,len(spill),filename)
+
+    filename = ""
+    prev = sys.argv[1].split('.')[0]
+    for k in sys.argv[1].split('.')[1:]:
+        filename += prev
+        prev = "."+k
+    done = False
+    IR,vars = generateInstructions(flat)
+    tmp = 0
+    #totalIter = 0
+    #Basic Algorithm
+    while not done:
+        liveness = livenessAnalysis(IR)
+        iG = interferenceGraph(IR,liveness,vars)
+        coloring = graphColor(iG)
+        spill = toSpill(coloring)
+        good,IR,vars,done = allocateRegisters(spill,IR,vars,coloring)
+    #print totalIter
+    #totalIter+=1
+    
+    
+    
+    #Attempted optimization
+    '''
+        liveness = livenessAnalysis(IR)
+        iG = interferenceGraph(IR,liveness,vars)
+        while not done:
+        coloring = graphColor(iG)
+        spill = toSpill(coloring)
+        good,IR,liveness,iG,done,tmp = allocateRegisters(spill,IR,liveness,iG,coloring,tmp)
+        '''
+    
+    #print good
+    
+    
+    outputCode(good,len(spill),filename)
+        
+        
         
         

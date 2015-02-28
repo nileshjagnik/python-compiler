@@ -128,7 +128,7 @@ class explicateVisitor():
             nodelist.append(self.dispatch(n))
         if len(nodelist)==0:
             nodelist=node.nodes
-        return InjectFrom('BIG',List(nodelist))
+        return List(nodelist)
     
     def visitDict(self, node):
         nodelist=[]
@@ -136,7 +136,7 @@ class explicateVisitor():
             nodelist.append((self.dispatch(n[0]),self.dispatch(n[1])))
         if len(nodelist)==0:
             nodelist=node.items
-        return InjectFrom('BIG',Dict(nodelist))
+        return Dict(nodelist)
         
     def visitOr(self,node):
         n1 = self.dispatch(node.nodes[0])
