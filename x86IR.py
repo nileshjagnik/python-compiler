@@ -2,6 +2,7 @@ from compiler.ast import *
 from x86Nodes import *
 from explicateNodes import *
 
+outputlabel = 0
 
 def generateOne(instr,assignmentVariable):
     
@@ -69,7 +70,7 @@ def generateOne(instr,assignmentVariable):
     
     
     elif isinstance(instr,CallFunc):
-        funcNode = Call("input")
+        funcNode = Call(instr.node.name)
         moveNode = MovL((Register("%eax"),assignmentVariable))
         return [funcNode,moveNode],vars
 
@@ -105,6 +106,7 @@ def generateOne(instr,assignmentVariable):
 
     elif isinstance(instr,InjectFrom):
         type = instr.typ
+        #print "debug:" , instr.arg
         if isinstance(instr.arg,Name):
             pushNode = Push(Var(instr.arg.name))
             vars.add(Var(instr.arg.name))
@@ -128,15 +130,21 @@ def generateOne(instr,assignmentVariable):
         vars.add(Var(expr))
         
         if isinstance(subs,Name):
+            #print subs
             pushNode = Push(Var(subs))
+            subNode = Call('get_subscript')
+            popStack = AddL((Con(4),Register("%esp")))
+            moveNode = MovL((Register("%eax"),assignmentVariable))
             vars.add(Var(subs))
+            
         elif isinstance(subs,Const):
+            #print instr
             pushNode = Push(Con(subs))
             subNode = Call('get_subscript')
             popStack = AddL((Con(4),Register("%esp")))
             moveNode = MovL((Register("%eax"),assignmentVariable))
         
-        return [pushCollection,pushNode,subNode,popStack,moveNode]
+        return [pushCollection,pushNode,subNode,popStack,moveNode],vars
 
     elif isinstance(instr,Dict):
         return [],vars #TODO
@@ -171,7 +179,7 @@ def generateOne(instr,assignmentVariable):
 
 
     elif isinstance(instr,Compare):
-        print instr
+        #print instr
         if instr.ops[0] == '==':
             if isinstance(instr.ops[1],Name) and isinstance(instr.expr,Name):
                 compareNode = CmpL((Var(instr.expr.name),Var(instr.ops[1].name)))
@@ -203,7 +211,6 @@ def generateOne(instr,assignmentVariable):
         return [compareNode],vars
 
 def generateAssign(tree):
-    
     assignmentVariable = Var(tree.nodes[0].name)
     
     newIR,vars = generateOne(tree.expr,assignmentVariable)
@@ -254,24 +261,17 @@ def generateIf(instr):
     vars = set([])
     s = []
     for x in instr.tests:
-        
-        
         if isinstance(x[0],Name):
             compare = CmpL((Con(0),Var(x[0].name)))
             vars.add(Var(x[0].name))
         else:
             compare = CmpL((Con(0),Con(x[0].value)))
-        print "COMPARE"
-        print compare
         IRif = []
         for n in x[1].nodes:
             if isinstance(n,Assign):
-                print n
                 newIR,v = generateAssign(n)
                 IRif.extend(newIR)
                 vars = vars | v
-                print "NEW IR"
-                print newIR
             elif isinstance(n,Printnl):
                 newIR,v = generatePrint(n)
                 IRif.extend(newIR)
@@ -280,32 +280,25 @@ def generateIf(instr):
             else:
                 newIR,newVars = generateIf(n)
                 IRif.extend(newIR)
-                vars = newVars | vars
-    
-        print "IR if"
-        print IRif
-        print "after dispact"
-        print compare
+                vars = newVars | vars    
     s.append((compare,IRif))
 
     IR=[]
     for e in instr.else_.nodes:
-        if isinstance(n,Assign):
-            newIR,v = generateAssign(n)
+        if isinstance(e,Assign):
+            newIR,v = generateAssign(e)
             
             IR.extend(newIR)
             vars = vars | v
-        elif isinstance(n,Printnl):
-            newIR,v = generatePrint(n)
+        elif isinstance(e,Printnl):
+            newIR,v = generatePrint(e)
             IR.extend(newIR)
             vars = vars | v
         
         else:
-            newIR,newVars = generateIf(n)
+            newIR,newVars = generateIf(e)
             IR.extend(newIR)
             vars = newVars | vars
-
-
     return ([IfNode(s,IR)],vars)
 
 
@@ -316,16 +309,32 @@ def outputCode(instructionList,stackSize,filename):
     
     assemblyCode = preamble
     assemblyCode += stackspace
-    for i in instructionList:
-        if i!=None:
-            assemblyCode +=(str(i))+'\n\t'
-
+    
+    assemblyCode += outputHelper(instructionList)
     assemblyCode += postemble
     targetfile = open(filename+".s", "w")
     targetfile.truncate()
     targetfile.write(assemblyCode)
     targetfile.close()
 
+def outputHelper(instructionList):
+    global outputlabel
+    code = ""
+    for i in instructionList:
+        if isinstance(i,IfNode):
+            name = str(outputlabel)
+            outputlabel += 1
+            code += str(i.tests[0][0]) + '\n\t'
+            code += "je else_label_"+name+"\n\t"
+            code += outputHelper(i.tests[0][1])
+            code += "jmp end_label_"+name+"\n\t"
+            code += "else_label_"+name+":\n\t"
+            code += outputHelper(i.else_)
+            code += "end_label_"+name+":\n\t"
+            
+        elif i!=None:
+            code +=(str(i))+'\n\t'
+    return code
 
 '''
     elif isinstance(tree.expr,Subscript):
@@ -340,3 +349,4 @@ def outputCode(instructionList,stackSize,filename):
     elif isinstance(tree.expr,InjectFrom):
     #call correct inject function
     '''
+

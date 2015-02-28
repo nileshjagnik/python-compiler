@@ -4,11 +4,12 @@ import sys
 from flattenNJ import *
 from ast2x86 import *
 from x86IR import *
-from registerAllocation import *
+from registerAllocation1 import *
 from colorSpill import *
 from explicateNJ import *
 from explicateNodes import *
 from typecheck import *
+from flattenNJ import *
 
 
 # python compile.py example1.py
@@ -24,35 +25,46 @@ if __name__ == '__main__':
     
     explicateAST = explicator.walk(startAST)
     print "EXPLICATE_AST:"
-    print explicateAST, "\n"
+    for x in explicateAST.node.nodes:
+        print x
     
-    print "TYPE CHECKER OUTPUT:"
+    print "\nTYPE CHECKER OUTPUT:"
     tchecker = typecheckVisitor()
     tchecker.walk(explicateAST)
     
-    debug = 0
+    debug = 1
     
     flatast = flatten(explicateAST)
-    print "\nFLATTEN ASTs:"
-    for i in flatast[1]:
-        print i
+    print "\nFLATTENED ASTs:"
     
-    registerTest = 0
+    registerTest = 1
+    
+    flat = []
+    for a in flatast:
+        for k in a:
+            if(debug):
+                print k , "\n"
+            flat.append(k)
+    
+    
     
     if(registerTest):
-        IR,variables = generateInstructions(test1)
+        IR,variables = generateInstructions(flat)
         if debug:
             print
             print "IR"
             for x in IR:
                 print x
             print
-            print "liveness"
+        """
+        print "liveness"
         liveness = livenessAnalysis(IR)
+        print len(IR),len(liveness)
         if debug:
             for x in liveness:
                 print x
             print
+        
         iG = interferenceGraph(IR,liveness,variables)
         
         coloring, IR, iG = colorSpill(iG,IR,liveness)
@@ -67,9 +79,12 @@ if __name__ == '__main__':
             print coloring
             
         stacksize = len([x for x in coloring.keys() if coloring[x]<0])
+        """
         filename = ""
         prev = sys.argv[1].split('.')[0]
         for k in sys.argv[1].split('.')[1:]:
         	filename += prev
         	prev = "."+k
-        outputCode(convertInstr(IR,coloring),stacksize,filename)
+        outputCode(IR,70,filename) # change these values
+        
+        

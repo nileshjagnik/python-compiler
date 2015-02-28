@@ -41,7 +41,7 @@ class updatePriorityQueue:
 def total(instructionList): #count line for if statements
     t = 0
     for i in instructionList:
-        if isinstance(i,If):
+        if isinstance(i,IfNode):
             for test in i.tests:
                 t += 1 + len(tests.tests[1])
             t += len(i.else_)

@@ -149,7 +149,7 @@ class explicateVisitor():
         return IfExp(CallFunc(Name('is_true'),[n1]),n2,n1)
     
     def visitNot(self,node):
-        return InjectFrom('BOOL', Not(self.dispatch(node.expr)))
+        return IfExp(CallFunc(Name('is_true'),[self.dispatch(node.expr)]), InjectFrom('BOOL', Name('False')),InjectFrom('BOOL', Name('True')))
     
     def visitIfExp(self,node):
         return IfExp(ProjectTo('BOOL',self.dispatch(node.test)),self.dispatch(node.then),self.dispatch(node.else_))

@@ -93,7 +93,7 @@ class CmpL(Instruction):
     def __str__(self):
         return "%s %s, %s" % (str(self.instruction),str(self.left), str(self.right))
     
-    def __repr(self):
+    def __repr__(self):
         return "%s %s, %s" % (repr(self.instruction),repr(self.left), repr(self.right))
 
 class IfNode(Instruction):
@@ -218,7 +218,3 @@ class Address(Operand):
     
     def __hash__(self):
         return hash(self.address)
-
-
-
-
