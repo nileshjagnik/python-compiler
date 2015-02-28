@@ -56,7 +56,6 @@ if __name__ == '__main__':
             for x in IR:
                 print x
             print
-        """
         print "liveness"
         liveness = livenessAnalysis(IR)
         print len(IR),len(liveness)
@@ -64,7 +63,7 @@ if __name__ == '__main__':
             for x in liveness:
                 print x
             print
-        
+        """
         iG = interferenceGraph(IR,liveness,variables)
         
         coloring, IR, iG = colorSpill(iG,IR,liveness)
