@@ -1,7 +1,7 @@
 import compiler
 #from parse import *
 import sys
-from flattenAST import *
+from flattenNJ import *
 from ast2x86 import *
 from x86IR import *
 from registerAllocation import *
@@ -32,13 +32,12 @@ if __name__ == '__main__':
     
     debug = 0
     
+    flatast = flatten(explicateAST)
+    print "\nFLATTEN ASTs:"
+    for i in flatast[1]:
+        print i
+    
     registerTest = 0
-        
-    if(debug):
-        print len(test1)
-        for t in test1:
-            print t
-        print varmap
     
     if(registerTest):
         IR,variables = generateInstructions(test1)
