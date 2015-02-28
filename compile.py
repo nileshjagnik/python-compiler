@@ -4,7 +4,7 @@ import sys
 from flattenNJ import *
 from ast2x86 import *
 from x86IR import *
-from registerAllocation1 import *
+from registerAllocation import *
 from colorSpill import *
 from explicateNJ import *
 from explicateNodes import *
