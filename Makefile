@@ -1,7 +1,7 @@
 all: build
 
 build:
-	python compile.py "./tests/exptest.py"
+	python compile.py "./tests/add_0.py"
 
 zip:
 	mkdir zipfolder
