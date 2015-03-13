@@ -83,6 +83,18 @@ class typecheckVisitor():
                 if  valtype != BIG:
                     print "Error in CallFunc, expected type: BIG , Found:",valtype
             return BIG
+        elif node.node.name =='equal':
+            for n in node.args:
+                valtype = self.dispatch(n)
+                if  valtype != BIG:
+                    print "Error in CallFunc, expected type: BIG , Found:",valtype
+            return BIG
+        elif node.node.name =='not_equal':
+            for n in node.args:
+                valtype = self.dispatch(n)
+                if  valtype != BIG:
+                    print "Error in CallFunc, expected type: BIG , Found:",valtype
+            return BIG
         elif node.node.name =='input':
             return INT
         elif node.node.name == '$error':

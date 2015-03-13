@@ -69,7 +69,7 @@ class explicateVisitor():
         return node
         
     def visitUnarySub(self,node):
-        return UnarySub(self.dispatch(node.expr))
+        return InjectFrom('INT', UnarySub(self.dispatch(node.expr)))
         
     def visitCallFunc(self, node):
         nodelist=[]
@@ -98,7 +98,13 @@ class explicateVisitor():
         else:
             rgt = rgtexp
         
+        ifexpr = IfExp(Compare(GetTag(lft),[('==', Const(INT))]), InjectFrom('INT', AddInt((ProjectTo('INT',lft),ProjectTo('INT',rgt)))),
+                        IfExp(Compare(GetTag(lft),[('==', Const(BOOL))]),
+                        InjectFrom('INT', AddInt((ProjectTo('INT',lft),ProjectTo('INT',rgt)))),
+                        InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
+        """
         n1 = Compare(GetTag(lft),[('==', Const(INT))])
+        
         n2 = Compare(GetTag(lft),[('==', Const(BOOL))])
         ifvalcond1 = IfExp(CallFunc(Name('is_true'),[n1]),n1,n2)
         
@@ -112,15 +118,15 @@ class explicateVisitor():
         n1 = Compare(GetTag(lft),[('==', Const(BIG))])
         n2 = Compare(GetTag(rgt),[('==', Const(BIG))])
         elseval = IfExp(IfExp(CallFunc(Name('is_true'),[n1]),n2,n1),InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)])) , CallFunc(Name('$error'),[]))
-        
+        """
         if letcount == 1:
             if lft==lftexp:
-                return Let(rgt,rgtexp,IfExp(ifval,thenval,elseval))
+                return Let(rgt,rgtexp,ifexpr)
             else:
-                return Let(lft,lftexp,IfExp(ifval,thenval,elseval))
+                return Let(lft,lftexp,ifexpr)
         elif letcount == 2:
-            return Let(lft,lftexp,Let(rgt,rgtexp,IfExp(ifval,thenval,elseval)))
-        return IfExp(ifval,thenval,elseval)
+            return Let(lft,lftexp,Let(rgt,rgtexp,ifexpr))
+        return ifexpr
     
     def visitList(self, node):
         nodelist=[]
@@ -139,30 +145,119 @@ class explicateVisitor():
         return Dict(nodelist)
         
     def visitOr(self,node):
-        n1 = self.dispatch(node.nodes[0])
-        n2 = self.dispatch(node.nodes[1])
-        return IfExp(CallFunc(Name('is_true'),[n1]),n1,n2)
+        letcount = 0
+        lftexp = self.dispatch(node.nodes[0])
+        if not (isinstance(node.nodes[0], Name) or isinstance(node.nodes[0], Const)):
+            lft = Name('$addtemp'+str(self.numtemp))
+            self.numtemp = self.numtemp + 1
+            letcount = letcount + 1
+        else:
+            lft = lftexp
+        
+        rgtexp = self.dispatch(node.nodes[1])
+        if not (isinstance(node.nodes[1], Name) or isinstance(node.nodes[1], Const)):
+            rgt = Name('$addtemp'+str(self.numtemp))
+            self.numtemp = self.numtemp + 1
+            letcount = letcount + 1
+        else:
+            rgt = rgtexp
+        
+        orexpr = IfExp(CallFunc(Name('is_true'),[lft]),lft,rgt)
+        if letcount == 1:
+            if lft==lftexp:
+                return Let(rgt,rgtexp,orexpr)
+            else:
+                return Let(lft,lftexp,orexpr)
+        elif letcount == 2:
+            return Let(lft,lftexp,Let(rgt,rgtexp,orexpr))
+        return orexpr
     
     def visitAnd(self,node):
-        n1 = self.dispatch(node.nodes[0])
-        n2 = self.dispatch(node.nodes[1])
-        return IfExp(CallFunc(Name('is_true'),[n1]),n2,n1)
+        letcount = 0
+        lftexp = self.dispatch(node.nodes[0])
+        if not (isinstance(node.nodes[0], Name) or isinstance(node.nodes[0], Const)):
+            lft = Name('$addtemp'+str(self.numtemp))
+            self.numtemp = self.numtemp + 1
+            letcount = letcount + 1
+        else:
+            lft = lftexp
+        
+        rgtexp = self.dispatch(node.nodes[1])
+        if not (isinstance(node.nodes[1], Name) or isinstance(node.nodes[1], Const)):
+            rgt = Name('$addtemp'+str(self.numtemp))
+            self.numtemp = self.numtemp + 1
+            letcount = letcount + 1
+        else:
+            rgt = rgtexp
+        
+        andexpr = IfExp(CallFunc(Name('is_true'),[lft]),rgt,lft)
+        if letcount == 1:
+            if lft==lftexp:
+                return Let(rgt,rgtexp,andexpr)
+            else:
+                return Let(lft,lftexp,andexpr)
+        elif letcount == 2:
+            return Let(lft,lftexp,Let(rgt,rgtexp,andexpr))
+        return andexpr
     
     def visitNot(self,node):
         return IfExp(CallFunc(Name('is_true'),[self.dispatch(node.expr)]), InjectFrom('BOOL', Name('False')),InjectFrom('BOOL', Name('True')))
     
     def visitIfExp(self,node):
-        return IfExp(ProjectTo('BOOL',self.dispatch(node.test)),self.dispatch(node.then),self.dispatch(node.else_))
+        letcount = 0
+        test = self.dispatch(node.test)
+        then = self.dispatch(node.then)
+        else_= self.dispatch(node.else_)
+        if not (isinstance(test,Name) or isinstance(test, Const)):
+            tst = Name('$addtemp'+str(self.numtemp))
+            self.numtemp = self.numtemp + 1
+            letcount = letcount + 1
+        else:
+            tst = test
+        ifexpr = IfExp(ProjectTo('BOOL',tst),then,else_)
+        if letcount == 1:
+            return Let(tst,test,ifexpr)
+        return ifexpr
     
     def visitCompare(self,node):
-        nodelist = []
-        for n in node.ops:
-            no = self.dispatch(n[1])
-            tag = no.typ
-            nodelist.append((n[0],ProjectTo(tag,no)))
-        if len(nodelist)==0:
-            nodelist=node.ops
-        return InjectFrom('BOOL', Compare(ProjectTo('INT',self.dispatch(node.expr)),nodelist))
+        leftexp = self.dispatch(node.expr)
+        op = node.ops[0][0]
+        rightexp = self.dispatch(n.ops[0][1])
+        
+        letcount = 0
+        if not (isinstance(node.expr, Name) or isinstance(node.expr, Const)):
+            lft = Name('$addtemp'+str(self.numtemp))
+            self.numtemp = self.numtemp + 1
+            letcount = letcount + 1
+        else:
+            lft = lftexp
+        
+        if not (isinstance(n.ops[0][1], Name) or isinstance(n.ops[0][1], Const)):
+            rgt = Name('$addtemp'+str(self.numtemp))
+            self.numtemp = self.numtemp + 1
+            letcount = letcount + 1
+        else:
+            rgt = rgtexp
+            
+        if op == 'is':
+            comp = InjectFrom('BOOL', Compare(lft,['is',rgt]))
+        elif op == '==':
+            comp = IfExp(Compare(GetTag(lft),['==',Const(INT)]),InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[op,ProjectTo('INT',rgt)])),
+                        IfExp(Compare(GetTag(lft),['==',Const(BOOL)]),InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[op,ProjectTo('INT',rgt)])),
+                                                                    InjectFrom('BOOL',CallFunc(Name('equal'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
+        elif op == '!=':
+            comp = IfExp(Compare(GetTag(lft),['==',Const(INT)]),InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[op,ProjectTo('INT',rgt)])),
+                        IfExp(Compare(GetTag(lft),['==',Const(BOOL)]),InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[op,ProjectTo('INT',rgt)])),
+                                                                    InjectFrom('BOOL',CallFunc(Name('not_equal'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
+        
+        if letcount == 1:
+            if lft==lftexp:
+                return Let(rgt,rgtexp,comp)
+            else:
+                return Let(lft,lftexp,comp)
+        elif letcount == 2:
+            return Let(lft,lftexp,Let(rgt,rgtexp,comp))
+        return comp
     
     def visitSubscript(self,node):
         nodelist = []

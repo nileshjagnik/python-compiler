@@ -48,6 +48,7 @@ if __name__ == '__main__':
         tchecker = typecheckVisitor()
         tchecker.walk(explicateAST)
     
+    print "\nFLAT ASTs:"
     for a in flatast:
         for k in a:
             if(debug):
