@@ -230,6 +230,9 @@ def generateOne(instr,assignmentVariable):
                 vars.add(Var(instr.expr.name))
             else:
                 compareNode = CmpL((Con(instr.expr.name),Con(instr.ops[1])))
+            setnode = SetNode(instr.ops[0],Register('%al'))
+            movenode = MovZBL((Register('%al'),Register('%eax')))
+            movevalnode = MovL((Register("%eax"),assignmentVariable))
 
         elif instr.ops[0] == '!=':
             if isinstance(instr.ops[1],Name) and isinstance(instr.expr,Name):
@@ -244,8 +247,11 @@ def generateOne(instr,assignmentVariable):
                 vars.add(Var(instr.expr.name))
             else:
                 compareNode = CmpL((Con(instr.expr.value),Con(instr.ops[1].value)))
+            setnode = SetNode(instr.ops[0],Register('%al'))
+            movenode = MovZBL((Register('%al'),Register('%eax')))
+            movevalnode = MovL((Register("%eax"),assignmentVariable))
 
-        return [compareNode],vars
+        return [compareNode,setnode,movenode,movevalnode],vars
 
 def generateAssign(tree):
     assignmentVariable = Var(tree.nodes[0].name)
@@ -362,12 +368,19 @@ def outputHelper(instructionList,varmap):
         if isinstance(i,IfNode):
             name = str(outputlabel)
             outputlabel += 1
-            code += outputHelper([i.tests[0][0]],varmap)
+            ifstmt = outputHelper([i.tests[0][0]],varmap)
+            
+            code += ifstmt
+            thenstmt = outputHelper(i.tests[0][1],varmap)
             code += "je else_label_"+name+"\n\t"
-            code += outputHelper(i.tests[0][1],varmap)
+            code += thenstmt
+            elsestmt = outputHelper(i.else_,varmap)
             code += "jmp end_label_"+name+"\n\t"
             code += "else_label_"+name+":\n\t"
-            code += outputHelper(i.else_,varmap)
+            code += elsestmt
+            #print "ifstmt:", ifstmt
+            #print "elsestmt:", elsestmt
+            #print "thenstmt:", thenstmt
             code += "end_label_"+name+":\n\t"
             
         elif i!=None:
@@ -384,8 +397,8 @@ def outputHelper(instructionList,varmap):
                 if isinstance(i.right,Con):
                     right = 1
                 if left == 1 and right == 1:
-                    code += str(MovL((i.left,Register("%eax")))) + "\n\t"
-                    i.left = Register("%eax")
+                    code += str(MovL((i.left,Register("%edx")))) + "\n\t"
+                    i.left = Register("%edx")
             elif isinstance(i,MovL):
                 left = right = 0
                 if isinstance(i.left,Var):
@@ -399,8 +412,8 @@ def outputHelper(instructionList,varmap):
                 if isinstance(i.right,Con):
                     right = 1
                 if left == 1 and right == 1:
-                    code += str(MovL((i.left,Register("%eax")))) + "\n\t"
-                    i.left = Register("%eax")
+                    code += str(MovL((i.left,Register("%edx")))) + "\n\t"
+                    i.left = Register("%edx")
             elif isinstance(i,CmpL):
                 left = right = 0
                 if isinstance(i.left,Var):
@@ -414,8 +427,8 @@ def outputHelper(instructionList,varmap):
                 if isinstance(i.right,Con):
                     right = 1
                 if left == 1:
-                    code += str(MovL((i.left,Register("%eax")))) + "\n\t"
-                    i.left = Register("%eax")
+                    code += str(MovL((i.left,Register("%edx")))) + "\n\t"
+                    i.left = Register("%edx")
                 if right == 1:
                     code += str(MovL((i.right,Register("%ecx")))) + "\n\t"
                     i.right = Register("%ecx")

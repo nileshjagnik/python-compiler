@@ -111,8 +111,37 @@ class IfNode(Instruction):
     def __repr__(self):
         return "%s %s %s" % (repr(self.instruction),repr(self.tests),repr(self.else_))
 
+class SetNode(Instruction):
+    def __init__(self,op,argument):
+        if op == '==':
+            self.instruction = "sete"
+        elif op == '!=':
+            self.instruction = "setne"
+        self.argument = argument
+                          
+    def getInputs(self):
+        return self.argument
+                          
+    def __repr__(self):
+        return "%s %s" % (repr(self.instruction),repr(self.argument))
 
+    def __str__(self):
+        return "%s %s" % (str(self.instruction),str(self.argument))
 
+class MovZBL(Instruction):
+    def __init__(self,leftright):
+        self.instruction = "movzbl"
+        self.left = leftright[0]
+        self.right = leftright[1]
+
+    def getInputs(self):
+        return self.left,self.right
+
+    def __repr__(self):
+        return "%s %s,%s" % (repr(self.instruction),repr(self.left), repr(self.right))
+
+    def __str__(self):
+            return "%s %s, %s" % (str(self.instruction),str(self.left), str(self.right))
 
 class Operand:
     """Abstract base class for x86 operands"""

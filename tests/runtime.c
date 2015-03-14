@@ -89,6 +89,7 @@ float project_float(pyobj val) {
   return (val >> SHIFT) << SHIFT;
 }
 big_pyobj* project_big(pyobj val) {
+  printf("Value-%ld, Expected-%d, value-%ld\n",val & MASK, BIG_TAG, val>>SHIFT);
   assert((val & MASK) == BIG_TAG);
   return (big_pyobj*)(val & ~MASK);
 }

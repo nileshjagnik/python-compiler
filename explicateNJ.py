@@ -69,7 +69,7 @@ class explicateVisitor():
         return node
         
     def visitUnarySub(self,node):
-        return InjectFrom('INT', UnarySub(self.dispatch(node.expr)))
+        return InjectFrom('INT', UnarySub(ProjectTo('INT',self.dispatch(node.expr))))
         
     def visitCallFunc(self, node):
         nodelist=[]

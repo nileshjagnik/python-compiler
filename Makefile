@@ -1,7 +1,7 @@
 all: build
 
 build:
-	python compile.py "./tests/assign_lhs_stack2.py"
+	python compile.py "./tests/t5.py"
 
 zip:
 	mkdir zipfolder
