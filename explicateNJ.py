@@ -100,7 +100,7 @@ class explicateVisitor():
         
         ifexpr = IfExp(Compare(GetTag(lft),[('==', Const(INT))]), InjectFrom('INT', AddInt((ProjectTo('INT',lft),ProjectTo('INT',rgt)))),
                         IfExp(Compare(GetTag(lft),[('==', Const(BOOL))]),
-                        InjectFrom('INT', AddInt((ProjectTo('INT',lft),ProjectTo('INT',rgt)))),
+                        InjectFrom('INT', AddInt((ProjectTo('BOOL',lft),ProjectTo('BOOL',rgt)))),
                         InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
         
         if letcount == 1:
@@ -185,7 +185,7 @@ class explicateVisitor():
         return andexpr
     
     def visitNot(self,node):
-        return IfExp(CallFunc(Name('is_true'),[self.dispatch(node.expr)]), InjectFrom('BOOL', Name('False')),InjectFrom('BOOL', Name('True')))
+        return IfExp(CallFunc(Name('is_true'),[self.dispatch(node.expr)]), InjectFrom('BOOL', Const('True')),InjectFrom('BOOL', Const('False')))
     
     def visitIfExp(self,node):
         letcount = 0
