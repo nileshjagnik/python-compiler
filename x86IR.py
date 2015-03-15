@@ -127,7 +127,7 @@ def generateOne(instr,assignmentVariable):
         expr = instr.expr
         subs = instr.subs[0]
         pushCollection = Push(Var(expr.name))
-        vars.add(Var(expr))
+        vars.add(Var(expr.name))
         
         if isinstance(subs,Name):
             #print subs
@@ -254,8 +254,10 @@ def generateOne(instr,assignmentVariable):
         return [compareNode,setnode,movenode,movevalnode],vars
 
 def generateAssign(tree):
+    #if isinstance(tree,Subscript)
+    #print tree
     assignmentVariable = Var(tree.nodes[0].name)
-    
+    #print assignmentVariable
     newIR,vars = generateOne(tree.expr,assignmentVariable)
     
     vars.add(assignmentVariable)

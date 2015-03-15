@@ -48,7 +48,10 @@ class typecheckVisitor():
     def visitAssign(self,node):
         rgttype = self.dispatch(node.expr)
         for n in node.nodes:
-            self.env[n.name] =rgttype
+            if isinstance(n,Subscript):
+                self.env[n.expr.name] =rgttype    
+            else:
+                self.env[n.name] =rgttype
         return None
     
     def visitAssName(self,node):
