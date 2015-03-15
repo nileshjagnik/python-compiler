@@ -63,6 +63,7 @@ pyobj inject_int(int i) {
   return (i << SHIFT) | INT_TAG;
 }
 pyobj inject_bool(int b) {
+  //printf("Injecting %d\n",b);
   return (b << SHIFT) | BOOL_TAG;
 }
 pyobj inject_float(int f) {
@@ -77,6 +78,7 @@ pyobj inject_big(big_pyobj* p) {
   Projecting from pyobj.
 */
 int project_int(pyobj val) {
+  //printf("Value-%ld, Expected-%d, value-%ld\n",val & MASK, INT_TAG, val>>SHIFT);
   assert((val & MASK) == INT_TAG);
   return val >> SHIFT;
 }
@@ -89,7 +91,7 @@ float project_float(pyobj val) {
   return (val >> SHIFT) << SHIFT;
 }
 big_pyobj* project_big(pyobj val) {
-  printf("Value-%ld, Expected-%d, value-%ld\n",val & MASK, BIG_TAG, val>>SHIFT);
+  //printf("Value-%ld, Expected-%d, value-%ld\n",val & MASK, BIG_TAG, val>>SHIFT);
   assert((val & MASK) == BIG_TAG);
   return (big_pyobj*)(val & ~MASK);
 }

@@ -65,7 +65,7 @@ class explicateVisitor():
     
     def visitName(self,node):
         if node.name == 'True' or node.name == 'False':
-            return InjectFrom('BOOL',node)
+            return InjectFrom('BOOL',Const(node.name))
         return node
         
     def visitUnarySub(self,node):
@@ -102,23 +102,7 @@ class explicateVisitor():
                         IfExp(Compare(GetTag(lft),[('==', Const(BOOL))]),
                         InjectFrom('INT', AddInt((ProjectTo('INT',lft),ProjectTo('INT',rgt)))),
                         InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
-        """
-        n1 = Compare(GetTag(lft),[('==', Const(INT))])
         
-        n2 = Compare(GetTag(lft),[('==', Const(BOOL))])
-        ifvalcond1 = IfExp(CallFunc(Name('is_true'),[n1]),n1,n2)
-        
-        n1 = Compare(GetTag(rgt),[('==', Const(INT))])
-        n2 = Compare(GetTag(rgt),[('==', Const(BOOL))])
-        ifvalcond2 = IfExp(CallFunc(Name('is_true'),[n1]),n1,n2)
-        ifval = IfExp(CallFunc(Name('is_true'),[ifvalcond1]),ifvalcond2,ifvalcond1)
-        
-        thenval = InjectFrom('INT', AddInt((ProjectTo('INT',lft),ProjectTo('INT',rgt))))
-        
-        n1 = Compare(GetTag(lft),[('==', Const(BIG))])
-        n2 = Compare(GetTag(rgt),[('==', Const(BIG))])
-        elseval = IfExp(IfExp(CallFunc(Name('is_true'),[n1]),n2,n1),InjectFrom('BIG', CallFunc(Name('add'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)])) , CallFunc(Name('$error'),[]))
-        """
         if letcount == 1:
             if lft==lftexp:
                 return Let(rgt,rgtexp,ifexpr)
@@ -214,15 +198,15 @@ class explicateVisitor():
             letcount = letcount + 1
         else:
             tst = test
-        ifexpr = IfExp(ProjectTo('BOOL',tst),then,else_)
+        ifexpr = IfExp(Compare(GetTag(tst),[('==', Const(BOOL))]),IfExp(ProjectTo('BOOL',tst),then,else_),IfExp(ProjectTo('INT',tst),then,else_))
         if letcount == 1:
             return Let(tst,test,ifexpr)
         return ifexpr
     
     def visitCompare(self,node):
-        leftexp = self.dispatch(node.expr)
+        lftexp = self.dispatch(node.expr)
         op = node.ops[0][0]
-        rightexp = self.dispatch(n.ops[0][1])
+        rgtexp = self.dispatch(node.ops[0][1])
         
         letcount = 0
         if not (isinstance(node.expr, Name) or isinstance(node.expr, Const)):
@@ -232,7 +216,7 @@ class explicateVisitor():
         else:
             lft = lftexp
         
-        if not (isinstance(n.ops[0][1], Name) or isinstance(n.ops[0][1], Const)):
+        if not (isinstance(node.ops[0][1], Name) or isinstance(node.ops[0][1], Const)):
             rgt = Name('$addtemp'+str(self.numtemp))
             self.numtemp = self.numtemp + 1
             letcount = letcount + 1
@@ -240,15 +224,28 @@ class explicateVisitor():
             rgt = rgtexp
             
         if op == 'is':
-            comp = InjectFrom('BOOL', Compare(lft,['is',rgt]))
+            comp = InjectFrom('BOOL', Compare(lft,[('is',rgt)]))
         elif op == '==':
-            comp = IfExp(Compare(GetTag(lft),['==',Const(INT)]),InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[op,ProjectTo('INT',rgt)])),
-                        IfExp(Compare(GetTag(lft),['==',Const(BOOL)]),InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[op,ProjectTo('INT',rgt)])),
-                                                                    InjectFrom('BOOL',CallFunc(Name('equal'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
+            comp = IfExp(Compare(GetTag(lft),[('==',Const(INT))]),IfExp(Compare(GetTag(rgt),[('==',Const(INT))]),
+                                                                        InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[(op,ProjectTo('INT',rgt))])),
+                                                                        InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[(op,ProjectTo('BOOL',rgt))]))),
+                            IfExp(Compare(GetTag(lft),[('==',Const(BOOL))]),
+                                        IfExp(Compare(GetTag(rgt),[('==',Const(INT))]),
+                                            InjectFrom('BOOL',Compare(ProjectTo('BOOL',lft),[(op,ProjectTo('INT',rgt))])),
+                                            InjectFrom('BOOL',Compare(ProjectTo('BOOL',lft),[(op,ProjectTo('BOOL',rgt))]))),
+                                        InjectFrom('BOOL',CallFunc(Name('equal'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
+            """comp = IfExp(Compare(GetTag(lft),[('==',Const(INT))]),InjectFrom('BOOL',Compare(lft,[(op,rgt)])),
+                        IfExp(Compare(GetTag(lft),[('==',Const(BOOL))]),InjectFrom('BOOL',Compare(lft,[(op,rgt)])),
+                                                                    InjectFrom('BOOL',CallFunc(Name('equal'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))"""
         elif op == '!=':
-            comp = IfExp(Compare(GetTag(lft),['==',Const(INT)]),InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[op,ProjectTo('INT',rgt)])),
-                        IfExp(Compare(GetTag(lft),['==',Const(BOOL)]),InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[op,ProjectTo('INT',rgt)])),
-                                                                    InjectFrom('BOOL',CallFunc(Name('not_equal'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
+            comp = IfExp(Compare(GetTag(lft),[('==',Const(INT))]),IfExp(Compare(GetTag(rgt),[('==',Const(INT))]),
+                                                                        InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[(op,ProjectTo('INT',rgt))])),
+                                                                        InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[(op,ProjectTo('BOOL',rgt))]))),
+                            IfExp(Compare(GetTag(lft),[('==',Const(BOOL))]),
+                                        IfExp(Compare(GetTag(rgt),[('==',Const(INT))]),
+                                            InjectFrom('BOOL',Compare(ProjectTo('BOOL',lft),[(op,ProjectTo('INT',rgt))])),
+                                            InjectFrom('BOOL',Compare(ProjectTo('BOOL',lft),[(op,ProjectTo('BOOL',rgt))]))),
+                                        InjectFrom('BOOL',CallFunc(Name('not_equal'),[ProjectTo('BIG',lft),ProjectTo('BIG',rgt)]))))
         
         if letcount == 1:
             if lft==lftexp:

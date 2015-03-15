@@ -88,13 +88,13 @@ class typecheckVisitor():
                 valtype = self.dispatch(n)
                 if  valtype != BIG:
                     print "Error in CallFunc, expected type: BIG , Found:",valtype
-            return BIG
+            return BOOL
         elif node.node.name =='not_equal':
             for n in node.args:
                 valtype = self.dispatch(n)
                 if  valtype != BIG:
                     print "Error in CallFunc, expected type: BIG , Found:",valtype
-            return BIG
+            return BOOL
         elif node.node.name =='input':
             return INT
         elif node.node.name == '$error':
@@ -169,18 +169,21 @@ class typecheckVisitor():
             if typeval == INT:
                 return PYOBJ
             else:
+                print node
                 print "Error in InjectFrom, expected type: INT, Found:", typeval
         elif node.typ == 'BOOL':
             typeval = self.dispatch(node.arg)
             if typeval == BOOL:
                 return PYOBJ
             else:
+                print node.arg
                 print "Error in InjectFrom, expected type: BOOL, Found:", typeval
         elif node.typ == 'BIG':
             typeval = self.dispatch(node.arg)
             if typeval == BIG:
                 return PYOBJ
             else:
+                print node
                 print "Error in InjectFrom, expected type: BIG, Found:", typeval
         return PYOBJ
     

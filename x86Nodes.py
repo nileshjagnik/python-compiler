@@ -150,6 +150,10 @@ class Operand:
 class Con(Operand):
     def __init__(self,value):
         self.value = value
+        if self.value == 'False':
+            self.value = 0
+        elif self.value == 'True':
+            self.value = 1
 
     def __repr__(self):
         return "$%s" % repr(self.value)
