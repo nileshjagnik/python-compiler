@@ -118,7 +118,8 @@ class explicateVisitor():
             nodelist.append(self.dispatch(n))
         if len(nodelist)==0:
             nodelist=node.nodes
-        return InjectFrom('BIG',List(nodelist))
+    #return InjectFrom('BIG',List(nodelist))
+        return List(nodelist)
     
     def visitDict(self, node):
         nodelist=[]

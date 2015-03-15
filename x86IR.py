@@ -144,7 +144,8 @@ def generateOne(instr,assignmentVariable):
             popStack = AddL((Con(4),Register("%esp")))
             moveNode = MovL((Register("%eax"),assignmentVariable))
         
-        return [pushCollection,pushNode,subNode,popStack,moveNode],vars
+#return [pushCollection,pushNode,subNode,popStack,moveNode],vars
+        return [pushNode,pushCollection,subNode,popStack,moveNode],vars
 
     elif isinstance(instr,Dict):
         createDictionary = []
@@ -155,7 +156,7 @@ def generateOne(instr,assignmentVariable):
                                  Push(Register("%eax"))])
         createDictionary.extend([Call('inject_big'),
                                 MovL((Register("%eax"),assignmentVariable)),
-                                AddL((Con(8),Register("%esp")))])
+                                AddL((Con(4),Register("%esp")))])
        
 
         for (k,v) in items:
@@ -256,12 +257,38 @@ def generateOne(instr,assignmentVariable):
 def generateAssign(tree):
     #if isinstance(tree,Subscript)
     #print tree
-    assignmentVariable = Var(tree.nodes[0].name)
-    #print assignmentVariable
-    newIR,vars = generateOne(tree.expr,assignmentVariable)
+    assignNode = tree.nodes[0]
+    #print assignNode
+    if isinstance(assignNode,AssName):
+        assignmentVariable = Var(assignNode.name)
+        
+        #print assignmentVariable
+        newIR,vars = generateOne(tree.expr,assignmentVariable)
     
-    vars.add(assignmentVariable)
-    return newIR,vars
+        vars.add(assignmentVariable)
+        return newIR,vars
+    
+    else:
+        vars = set([])
+        if isinstance(assignNode.subs[0],Name):
+            vars.add(Var(assignNode.subs[0].name))
+            pushNodeKey = Push(Var(assignNode.subs[0].name))
+        else:
+            pushNodeKey = Push(Con(assignNode.subs[0].value))
+        if isinstance(tree.expr,Name):
+            vars.add(Var(tree.expr.name))
+            pushNodeValue = Push(Var(tree.expr.name))
+        else:
+            pushNodeValue = Push(Con(tree.expr.value))
+        
+        pushNodeBig = Push(Var(assignNode.expr))
+        vars.add(Var(assignNode.expr))
+        callNode = Call('set_subscript')
+        popStack = AddL((Con(12),Register("%esp")))
+
+
+        return [pushNodeValue,pushNodeKey,pushNodeBig,callNode,popStack],vars
+
 
 def generatePrint(tree):
     vars = set([])

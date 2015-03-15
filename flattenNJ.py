@@ -25,13 +25,15 @@ def flatten_stmt(s):
         return flat
     
     elif isinstance(s, Assign):
+        #print s
         (v,a) = flatten_exp(s.expr)
         for n in s.nodes:
             if isinstance(n,Subscript):
                 (vn,an) = flatten_exp(n.subs[0])
-                newNode = Assign([AssName(a.name,'OP_ASSIGN')],an)
+                newNode = Assign([Subscript(n.expr.name,'OP_ASSIGN',[an])],a)
                 v = v + vn + [newNode]
             else:
+                #print n
                 newNode = Assign([AssName(n.name,'OP_ASSIGN')],a)
                 v.append(newNode)
         return v
@@ -119,7 +121,7 @@ def flatten_exp(e):
         
     elif isinstance(e,Let):
         (v,a) = flatten_exp(e.rhs)
-        newNode = Assign([e.var,'OP_ASSIGN'],a)
+        newNode = Assign([AssName(e.var.name,'OP_ASSIGN')],a)
         v.append(newNode)
         
         (vB,aB) = flatten_exp(e.body)
