@@ -48,7 +48,7 @@ if __name__ == '__main__':
         tchecker = typecheckVisitor()
         tchecker.walk(explicateAST)
     
-    print "\nFLAT ASTs:"
+        print "\nFLAT ASTs:"
     for a in flatast:
         for k in a:
             if(debug):
@@ -83,3 +83,29 @@ if __name__ == '__main__':
         	prev = "."+k
     	
         outputCode(IR,len(vars),filename,varmap) # change these values
+
+    #OUTPUT CODE
+    IR,vars = generateInstructions(flat)
+
+    counter = -4
+    varmap = {}
+    for v in vars:
+        varmap[v] = counter
+        counter -= 4
+
+
+    done = False
+    totalIter = 0
+    tmp = 0
+        
+    filename = ""
+    prev = sys.argv[1].split('.')[0]
+    for k in sys.argv[1].split('.')[1:]:
+        filename += prev
+        prev = "."+k
+
+    outputCode(IR,len(vars),filename,varmap)
+
+
+
+

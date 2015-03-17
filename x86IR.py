@@ -70,9 +70,33 @@ def generateOne(instr,assignmentVariable):
     
     
     elif isinstance(instr,CallFunc):
-        funcNode = Call(instr.node.name)
-        moveNode = MovL((Register("%eax"),assignmentVariable))
-        return [funcNode,moveNode],vars
+        if instr.node.name == 'input':
+            funcNode = Call(instr.node.name)
+            moveNode = MovL((Register("%eax"),assignmentVariable))
+            return [funcNode,moveNode],vars
+        elif instr.node.name == 'add' or instr.node.name=='equal' or instr.node.name == 'not_equal':
+            args = instr.args
+            #print args
+            pushNode1 = Push(Var(args[1]))
+            pushNode2 = Push(Var(args[0]))
+            funcNode = Call(instr.node.name)
+            moveNode = MovL((Register("%eax"),assignmentVariable))
+            popStack = AddL((Con(8),Register("%esp")))
+            vars.add(Var(args[0]))
+            vars.add(Var(args[1]))
+            return [pushNode1,pushNode2,funcNode,moveNode,popStack],vars
+        elif instr.node.name == 'is_true':
+            args = instr.args
+            pushNode = Push(Var(args[0]))
+            funcNode = Call(instr.node.name)
+            moveNode = MovL((Register("%eax"),assignmentVariable))
+            popStack = AddL((Con(4),Register("%esp")))
+            vars.add(Var(args[0]))
+            return [pushNode,funcNode,moveNode,popStack],vars
+
+
+    
+                                
 
     elif isinstance(instr,GetTag):
         if isinstance(instr.arg,Name):
@@ -263,6 +287,7 @@ def generateAssign(tree):
         assignmentVariable = Var(assignNode.name)
         
         #print assignmentVariable
+        #print tree.expr
         newIR,vars = generateOne(tree.expr,assignmentVariable)
     
         vars.add(assignmentVariable)

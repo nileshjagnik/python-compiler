@@ -186,7 +186,7 @@ class explicateVisitor():
         return andexpr
     
     def visitNot(self,node):
-        return IfExp(CallFunc(Name('is_true'),[self.dispatch(node.expr)]), InjectFrom('BOOL', Const('True')),InjectFrom('BOOL', Const('False')))
+        return IfExp(CallFunc(Name('is_true'),[self.dispatch(node.expr)]), InjectFrom('BOOL', Const('False')),InjectFrom('BOOL', Const('True')))
     
     def visitIfExp(self,node):
         letcount = 0
@@ -199,7 +199,9 @@ class explicateVisitor():
             letcount = letcount + 1
         else:
             tst = test
-        ifexpr = IfExp(Compare(GetTag(tst),[('==', Const(BOOL))]),IfExp(ProjectTo('BOOL',tst),then,else_),IfExp(ProjectTo('INT',tst),then,else_))
+        ifexpr = IfExp(Compare(GetTag(tst),[('==', Const(BOOL))]),IfExp(ProjectTo('BOOL',tst),then,else_),IfExp(Compare(GetTag(tst),[('==', Const(INT))]),IfExp(ProjectTo('INT',tst),then,else_),IfExp(CallFunc(Name('is_true'),[tst]),then,else_)))
+                    
+                       
         if letcount == 1:
             return Let(tst,test,ifexpr)
         return ifexpr
