@@ -227,7 +227,19 @@ class explicateVisitor():
             rgt = rgtexp
             
         if op == 'is':
-            comp = InjectFrom('BOOL', Compare(lft,[('is',rgt)]))
+            thenint = IfExp(Compare(GetTag(rgt),[('==',Const(INT))]),
+                    InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[('==',ProjectTo('INT',rgt))])),
+                    InjectFrom('BOOL', Const('False')))
+            
+            elseint = IfExp(Compare(GetTag(lft),[('==',Const(BOOL))]),
+                    IfExp(Compare(GetTag(rgt),[('==',Const(BOOL))]),
+                        InjectFrom('BOOL',Compare(ProjectTo('BOOL',lft),[('==',ProjectTo('BOOL',rgt))])),
+                        InjectFrom('BOOL', Const('False'))),
+                    IfExp(Compare(GetTag(rgt),[('==',Const(BIG))]),
+                        InjectFrom('BOOL', Compare(ProjectTo('INT',ProjectTo('BIG',lft)),[('==',ProjectTo('INT',ProjectTo('BIG',rgt)))])),
+                        InjectFrom('BOOL', Const('False'))))
+            comp = IfExp(Compare(GetTag(lft),[('==',Const(INT))]),thenint,elseint)
+            #comp = InjectFrom('BOOL', Compare(lft,[('is',rgt)]))
         elif op == '==':
             comp = IfExp(Compare(GetTag(lft),[('==',Const(INT))]),IfExp(Compare(GetTag(rgt),[('==',Const(INT))]),
                                                                         InjectFrom('BOOL',Compare(ProjectTo('INT',lft),[(op,ProjectTo('INT',rgt))])),

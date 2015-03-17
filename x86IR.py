@@ -275,7 +275,7 @@ def generateOne(instr,assignmentVariable):
             setnode = SetNode(instr.ops[0],Register('%al'))
             movenode = MovZBL((Register('%al'),Register('%eax')))
             movevalnode = MovL((Register("%eax"),assignmentVariable))
-
+        
         return [compareNode,setnode,movenode,movevalnode],vars
 
 def generateAssign(tree):
