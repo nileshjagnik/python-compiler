@@ -278,3 +278,9 @@ class explicateVisitor():
         if len(nodelist)==0:
             nodelist=node.subs
         return Subscript(self.dispatch(node.expr),'OP_ASSIGN',nodelist)
+    
+    def visitFunction(self, node):
+        return Assign([AssName(node.name,'OP_ASSIGN')], Lambda(node.argnames, node.defaults, node.flags, self.dispatch(node.code)))
+    
+    def visitReturn(self,node):
+        return Return(self.dispatch(node.value))

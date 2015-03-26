@@ -34,10 +34,10 @@ if __name__ == '__main__':
         print "UNIQUEAST:"
         print uniqueAST, "\n"
     
-    """
+    
     explicator = explicateVisitor()
     
-    explicateAST = explicator.walk(startAST)
+    explicateAST = explicator.walk(uniqueAST)
     
     
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
         print "EXPLICATE_AST:"
         for x in explicateAST.node.nodes:
             print x
-        
+    """    
         print "\nTYPE CHECKER OUTPUT:"
         tchecker = typecheckVisitor()
         tchecker.walk(explicateAST)
