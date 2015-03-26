@@ -21,9 +21,12 @@ def uniquify(n,varmap):
     
     elif isinstance(n,Assign):
         if isinstance(n.nodes[0],AssName):
-            varmap[n.nodes[0].name] = unLabel
-            n.nodes[0].name = "$$" + n.nodes[0].name + str(unLabel)
-            unLabel += 1
+            if not varmap.has_key(n.nodes[0].name):
+                varmap[n.nodes[0].name] = unLabel
+                n.nodes[0].name = "$$" + n.nodes[0].name + str(unLabel)
+                unLabel += 1
+            else:
+                n.nodes[0].name = "$$" + n.nodes[0].name + str(varmap[n.nodes[0].name])
         return Assign(n.nodes,uniquify(n.expr,varmap))
     
     elif isinstance(n,Discard):
@@ -41,6 +44,11 @@ def uniquify(n,varmap):
             x = "$$" + x + str(unLabel)
             unLabel += 1
             arg.append(x)
+        
+        for x in n.code:
+            if isinstance(x,Assign):
+                funcvarmap[x.nodes[0].name] = unLabel
+                unLabel += 1
         return Function(n.decorators, n.name, arg, n.defaults, n.flags, n.doc, uniquify(n.code,funcvarmap))
     
     elif isinstance(n,Lambda):
