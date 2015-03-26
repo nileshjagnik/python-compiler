@@ -192,9 +192,9 @@ class typecheckVisitor():
     
     def visitProjectTo(self,node):
         typeval = self.dispatch(node.arg)
-        if typeval != PYOBJ:
+        '''if typeval != PYOBJ:
             print "Error in ProjectTo, expected type: PYOBJ, Found:", typeval, "\n"
-            print node
+            print node'''
         if node.typ == 'INT':
             return INT
         elif node.typ == 'BOOL':
@@ -205,8 +205,8 @@ class typecheckVisitor():
     
     def visitGetTag(self,node):
         typeval = self.dispatch(node.arg)
-        if typeval != PYOBJ:
-            print "Error in GetTag, expected type: PYOBJ, Found:", typeval
+        '''if typeval != PYOBJ:
+            print "Error in GetTag, expected type: PYOBJ, Found:", typeval'''
         return INT
     
     def visitLet(self,node):
@@ -220,6 +220,6 @@ class typecheckVisitor():
         e2 = self.dispatch(node.right)
         if e1 == e2 == INT:
             return INT
-        else:
-            print "Error in AddInt, expected type: (INT,INT), Found:",(e1,e2) 
+        '''else:
+            print "Error in AddInt, expected type: (INT,INT), Found:",(e1,e2)''' 
         return INT

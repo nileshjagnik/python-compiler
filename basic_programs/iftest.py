@@ -1,3 +1,4 @@
-x = [2,7,8]
-y = True
-z= x[0] if input() is 2 else y
+x = 3
+def f(y):
+    z = 3
+    return x + y + z

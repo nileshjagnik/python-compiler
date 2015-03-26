@@ -10,6 +10,7 @@ from explicateNJ import *
 from explicateNodes import *
 from typecheck import *
 from flattenNJ import *
+from uniquify import *
 
 
 # python compile.py example1.py
@@ -18,8 +19,22 @@ from flattenNJ import *
 # cat test.in | -l test.exe
 
 if __name__ == '__main__':
+    debug = 1
     startAST = compiler.parseFile(sys.argv[1])
     
+    if (debug):
+        
+        print "STARTAST:"
+        print startAST , "\n"
+        
+    uniqueAST = uniquify(startAST,{})
+    
+    if (debug):
+        
+        print "UNIQUEAST:"
+        print uniqueAST, "\n"
+    
+    """
     explicator = explicateVisitor()
     
     explicateAST = explicator.walk(startAST)
@@ -27,18 +42,15 @@ if __name__ == '__main__':
     
 
     
-    debug = 1
     
-    flatast = flatten(explicateAST)
-    #print "\nFLATTENED ASTs:"
     
-    registerTest = 1
+    #flatast = flatten(explicateAST)
+    
+    #registerTest = 1
     
     flat = []
+    
     if (debug):
-        
-        print "STARTAST:"
-        print startAST , "\n"
         
         print "EXPLICATE_AST:"
         for x in explicateAST.node.nodes:
@@ -49,11 +61,11 @@ if __name__ == '__main__':
         tchecker.walk(explicateAST)
     
         print "\nFLAT ASTs:"
-    for a in flatast:
-        for k in a:
-            if(debug):
-                print k , "\n"
-            flat.append(k)
+        for a in flatast:
+            for k in a:
+                if(debug):
+                    print k , "\n"
+                flat.append(k)
     
     
     
@@ -106,6 +118,6 @@ if __name__ == '__main__':
 
     outputCode(IR,len(vars),filename,varmap)
 
-
+    """
 
 
