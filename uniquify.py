@@ -9,8 +9,25 @@ def uniquify(n,varmap):
     
     elif isinstance(n,Stmt):
         uni = []
-        for x in n.nodes:
-            uni.append(uniquify(x,varmap))
+        laterlist = []
+        laterindex = []
+        for i,x in enumerate(n.nodes):
+            if isinstance(x, Function):
+                laterlist.append(x)
+                laterindex.append(i)
+                uni.append(0)
+                varmap[x.name] = unLabel
+                x.name = "$$" + x.name + str(unLabel)
+                unLabel += 1
+            elif isinstance(x, Lambda):
+                laterlist.append(x)
+                laterindex.append(i)
+                uni.append(0)
+            else:
+                uni.append(uniquify(x,varmap))
+        
+        for i,x in enumerate(laterlist):
+            uni[laterindex[i]] = uniquify(x,varmap)
         return Stmt(uni)
     
     elif isinstance(n,Printnl):
@@ -33,10 +50,6 @@ def uniquify(n,varmap):
         return Discard(uniquify(n.expr,varmap))
     
     elif isinstance(n,Function):
-        varmap[n.name] = unLabel
-        n.name = "$$" + n.name + str(unLabel)
-        unLabel += 1
-        
         funcvarmap = varmap.copy()
         arg = []
         for x in n.argnames:
@@ -45,7 +58,7 @@ def uniquify(n,varmap):
             unLabel += 1
             arg.append(x)
         
-        for x in n.code:
+        for x in n.code.nodes:
             if isinstance(x,Assign):
                 funcvarmap[x.nodes[0].name] = unLabel
                 unLabel += 1

@@ -11,6 +11,7 @@ from explicateNodes import *
 from typecheck import *
 from flattenNJ import *
 from uniquify import *
+from heapify import *
 
 
 # python compile.py example1.py
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     
     explicateAST = explicator.walk(uniqueAST)
     
-    
+    hAST = heapify(explicateAST, set([]))
 
     
     
@@ -52,14 +53,26 @@ if __name__ == '__main__':
     
     if (debug):
         
+        i = 0
         print "EXPLICATE_AST:"
+        print get_heapvars(explicateAST.node)
         for x in explicateAST.node.nodes:
             print x
+            i +=1
+            if i == 5:
+                print get_heapvars(x.expr)
+        
+        print
+        print
+        print "Heapified:"
+        for x in hAST.node.nodes:
+            print x
+        
     """    
         print "\nTYPE CHECKER OUTPUT:"
         tchecker = typecheckVisitor()
         tchecker.walk(explicateAST)
-    
+        
         print "\nFLAT ASTs:"
         for a in flatast:
             for k in a:

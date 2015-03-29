@@ -1,11 +1,15 @@
 a = 3
-y = 4
+z = 6
+q = [0]
+q[0] = a
 
-def f(a):
+def f(a, g):
     print a
-    def f(x):
-        print x
-    f(2)
-    return a + y
+    z = 3
+    def f(y):
+        return a + z + y
+    r = 8
+    return a + y + z + g
 
-print f(y)
+y = 3
+print f(z,9)

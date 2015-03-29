@@ -1,6 +1,8 @@
 from compiler.ast import *
 from explicateNodes import *
 
+heaplabel = 0
+
 def free_vars(n):
     if isinstance(n, Stmt):
         frev = set([])
@@ -19,7 +21,10 @@ def free_vars(n):
         return frev
     
     elif isinstance(n, Assign):
-        return free_vars(n.expr) - set([n.nodes[0].name])
+        if isinstance(n.nodes[0], AssName):
+            return free_vars(n.expr) - set([n.nodes[0].name])
+        else:
+            return free_vars(n.expr) - set([n.nodes[0].expr])
     
     elif isinstance(n,Discard):
         return free_vars(n.expr)
@@ -76,3 +81,149 @@ def free_vars(n):
     
     elif isinstance(n,Return):
         return free_vars(n.value)
+    
+    else:
+        return set([])
+
+def get_heapvars(n):
+    if isinstance(n,Stmt):
+        free = set([])
+        for x in n.nodes:
+            if isinstance(x, Assign):
+                if isinstance(x.expr, Lambda):
+                    free |= free_vars(x.expr)
+        return free
+    
+    elif isinstance(n,Lambda):
+        return get_heapvars(n.code)
+        
+    else:
+        return set([])
+    
+def heapify(n, heaplist):
+    global heaplabel
+    if isinstance(n,Module):
+        st = []
+        heapvars = get_heapvars(n.node)
+        for x in heapvars:
+            alloc = Assign([AssName(x,'OP_ASSIGN')],List([InjectFrom('INT', Const(0))]))
+            st = st + [alloc]
+        st = st + heapify(n.node,heaplist).nodes
+        return Module(n.doc,Stmt(st))
+    
+    elif isinstance(n, Stmt):
+        newheap = heaplist.copy() | get_heapvars(n)
+        stmt = []
+        for x in n.nodes:
+            stmt.append(heapify(x,newheap))
+        return Stmt(stmt)
+    
+    elif isinstance(n, Printnl):
+        stmt = []
+        for x in n.nodes:
+            stmt.append(heapify(x,heaplist))
+        return Printnl(stmt,n.dest)
+    
+    elif isinstance(n, Assign):
+        if isinstance(n.nodes[0],AssName):
+            if n.nodes[0].name in heaplist:
+                return Assign([Subscript(Name(n.nodes[0].name), 'OP_ASSIGN', [InjectFrom('INT', Const(0))])], heapify(n.expr,heaplist))
+        return Assign(n.nodes,heapify(n.expr,heaplist))
+    
+    elif isinstance(n,Discard):
+        return Discard(heapify(n.expr,heaplist))
+    
+    elif isinstance(n, Lambda):
+        newdict = {}
+        heapifyvars = get_heapvars(n)
+        newheap = heaplist.copy() | heapifyvars
+        argheap = []
+        for i,x in enumerate(n.argnames):
+            if x in newheap:
+                newdict[x] = heaplabel
+                heaplabel += 1
+                argheap.append(x)
+                n.argnames[i] = '$heap'+str(newdict[x])
+        
+        params = []
+        for x in heapifyvars-heaplist:
+            if x in argheap:
+                alloc = Assign([AssName(x,'OP_ASSIGN')],List([InjectFrom('INT', Const(0))]))
+                init = Assign([Subscript(Name(x), 'OP_ASSIGN', [InjectFrom('INT', Const(0))])], Name('$heap'+str(newdict[x])))
+                params = params + [alloc,init]
+            else:
+                alloc = Assign([AssName(x,'OP_ASSIGN')],List([InjectFrom('INT', Const(0))]))
+                params = params + [alloc]
+        params = params + (heapify(n.code,newheap)).nodes
+        return Lambda(n.argnames, n.defaults, n.flags, Stmt(params))
+    
+    elif isinstance(n,Return):
+        return Return(heapify(n.value,heaplist))
+    
+    elif isinstance(n,Const):
+        return n
+       
+    elif isinstance(n, Name):
+        if n.name in heaplist:
+            return Subscript(Name(n.name), 'OP_ASSIGN', [InjectFrom('INT', Const(0))])
+        else:
+            return n   
+    
+    elif isinstance(n,AddInt):
+        return AddInt((heapify(n.left,heaplist),heapify(n.right,heaplist)))
+    
+    elif isinstance(n,UnarySub):
+        return UnarySub(heapify(n.expr,heaplist))
+    
+    elif isinstance(n,IfExp):
+        return IfExp(heapify(n.test,heaplist),heapify(n.then,heaplist),heapify(n.else_,heaplist))
+    
+    elif isinstance(n,Subscript):
+        return Subscript(heapify(n.expr,heaplist),n.flags,[heapify(n.subs[0],heaplist)])
+        
+    elif isinstance(n,ProjectTo):
+        return ProjectTo(n.typ,heapify(n.arg,heaplist))
+        
+    elif isinstance(n,InjectFrom):
+        return InjectFrom(n.typ,heapify(n.arg,heaplist))
+    
+    elif isinstance(n,GetTag):
+        return GetTag(heapify(n.arg,heaplist))
+    
+    elif isinstance(n,Let):
+        return Let(n.var,heapify(n.rhs,heaplist),heapify(n.body,heaplist))
+    
+    elif isinstance(n,List):
+        return n
+    
+    elif isinstance(n,Dict):
+        return n
+        
+    elif isinstance(n,Compare):
+        return Compare(heapify(n.expr,heaplist),[n.ops[0][0],heapify(n.ops[0][1],heaplist)])
+    
+    elif isinstance(n,Or):
+        orlist = []
+        for x in n.nodes:
+            orlist.append(heapify(x,heaplist))
+        return Or(orlist)
+    
+    elif isinstance(n,And):
+        andlist = []
+        for x in n.nodes:
+            andlist.append(heapify(x,heaplist))
+        return And(andlist)
+    
+    elif isinstance(n,Not):
+        return Not(heapify(n.expr,heaplist))
+    
+    elif isinstance(n,CallFunc):
+        if n.node.name == 'input':
+            return n
+        arglist = []
+        for x in n.args:
+            arglist.append(heapify(x,heaplist))
+        return CallFunc(heapify(n.node,heaplist),arglist)
+        
+    else:
+        return n
